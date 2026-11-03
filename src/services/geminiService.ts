@@ -10,15 +10,14 @@ export const GROQ_CHAT_COMPLETIONS_URL =
 
 /**
  * Ordered pool of Groq models with independent per-model TPM buckets.
- * If one model is unavailable (HTTP 404) or hits its per-minute token limit (HTTP 429),
- * Prism automatically routes the request to the next model in the pool.
+ * If one model is unavailable (HTTP 404), hits rate limits (HTTP 429),
+ * or fails JSON validation (HTTP 400), Prism automatically routes to the next model.
  */
 export const GROQ_FALLBACK_MODELS = [
-  'qwen/qwen3.8-27b',
-  'openai/gpt-oss-20b',
-  'openai/gpt-oss-120b',
-  'allam-2-7b',
   'llama-3.3-70b-versatile',
+  'qwen/qwen3.8-27b',
+  'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
   'llama-3.1-8b-instant',
 ] as const;
 
@@ -39,18 +38,37 @@ async function parseApiErrorDetails(response: Response): Promise<{
   errorCode?: string;
 }> {
   try {
-    const body = (await response.json()) as {
-      error?: { message?: string; code?: string };
+    const data = (await response.json()) as {
+      error?: {
+        message?: string;
+        code?: string;
+      };
     };
     return {
-      detailMessage: body?.error?.message,
-      errorCode: body?.error?.code,
+      detailMessage: data?.error?.message,
+      errorCode: data?.error?.code,
     };
   } catch {
     return {};
   }
 }
 
+/**
+ * Helper to dynamically compute token budget for OpenAI-compatible completions.
+ * Scales with the number of tabs while respecting provider ceilings.
+ */
+function estimateMaxTokens(userPayload: string): number {
+  // Approximate length of user payload to gauge tab count
+  // 1200 tokens was insufficient for 75+ tabs when generating groups + tabIds
+  const length = userPayload.length;
+  if (length > 3000) return 2800;
+  if (length > 1500) return 2200;
+  return 1800;
+}
+
+/**
+ * Calls any standard OpenAI-compatible Chat Completions API endpoint (Groq / OpenRouter / Custom).
+ */
 async function callOpenAiCompatibleProvider({
   providerLabel,
   endpoint,
@@ -69,6 +87,8 @@ async function callOpenAiCompatibleProvider({
   signal: AbortSignal;
 }): Promise<unknown> {
   const cleanKey = apiKey.trim();
+  const maxTokens = estimateMaxTokens(userPayload);
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -79,9 +99,7 @@ async function callOpenAiCompatibleProvider({
     body: JSON.stringify({
       model,
       temperature: 0.1,
-      // Explicitly cap max_tokens so Groq's pre-flight TPM limiter does not reserve
-      // 4096+ completion tokens upfront against the 8000 TPM free-tier quota
-      max_tokens: 1200,
+      max_tokens: maxTokens,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
@@ -145,8 +163,7 @@ async function callOpenAiCompatibleProvider({
 /**
  * Calls Groq's `/openai/v1/chat/completions` endpoint with automatic multi-model rotation:
  * - If a model returns HTTP 404 (`model_not_found`), HTTP 429 (per-model TPM rate limit),
- *   or HTTP 503, Prism immediately rotates to the next active model in `GROQ_FALLBACK_MODELS`
- *   (each model has its own independent 8,000 TPM quota on Groq).
+ *   HTTP 503, or HTTP 400 ("Failed to validate JSON" / truncation), Prism rotates to the next model in `GROQ_FALLBACK_MODELS`.
  */
 async function callGroqWithModelFallback({
   apiKey,
@@ -161,7 +178,7 @@ async function callGroqWithModelFallback({
   userPayload: string;
   signal: AbortSignal;
 }): Promise<unknown> {
-  const primary = (preferredModel || 'qwen/qwen3.8-27b').trim();
+  const primary = (preferredModel || 'llama-3.3-70b-versatile').trim();
   const candidates = [
     primary,
     ...GROQ_FALLBACK_MODELS.filter((m) => m !== primary),
@@ -182,13 +199,19 @@ async function callGroqWithModelFallback({
       });
     } catch (err) {
       lastError = err;
+      const isJsonValidationError =
+        err instanceof GeminiApiError &&
+        err.statusCode === 400 &&
+        err.message.toLowerCase().includes('failed to validate json');
+
       const shouldTryNextModel =
         err instanceof GeminiApiError &&
         (err.statusCode === 404 ||
           err.statusCode === 429 ||
           err.statusCode === 503 ||
           err.isRateLimit ||
-          err.errorCode === 'model_not_found');
+          err.errorCode === 'model_not_found' ||
+          isJsonValidationError);
 
       if (!shouldTryNextModel) {
         throw err;
@@ -203,10 +226,9 @@ async function callGroqWithModelFallback({
 }
 
 /**
- * Unified Multi-Provider AI Client supporting:
- * 1. Groq (`https://api.groq.com/openai/v1/chat/completions`) — LPU ultra-low latency
- * 2. Google Gemini (`generativelanguage.googleapis.com`) — Structured JSON Schema
- * 3. Custom OpenAI-Compatible endpoints (`${baseUrl}/chat/completions`)
+ * Production implementation of `SemanticCompletionClient`.
+ * Supports Google Gemini (`v1beta/models/...:generateContent`), Groq LPU (`/openai/v1/chat/completions`),
+ * and arbitrary OpenAI-compatible custom endpoints.
  */
 export const geminiClient: SemanticCompletionClient = {
   async generateGroups({
@@ -219,36 +241,36 @@ export const geminiClient: SemanticCompletionClient = {
   }: {
     provider?: AiProvider;
     apiKey: string;
-    model: string;
+    model?: string;
     baseUrl?: string;
     systemPrompt: string;
     userPayload: string;
   }): Promise<unknown> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 18000);
-
     const cleanKey = apiKey.trim();
-    const effectiveProvider: AiProvider =
+    const activeProvider: AiProvider =
       provider ?? (cleanKey.startsWith('gsk_') ? 'groq' : 'gemini');
 
     try {
-      if (effectiveProvider === 'groq') {
+      if (activeProvider === 'groq') {
         return await callGroqWithModelFallback({
           apiKey: cleanKey,
-          preferredModel: model || 'qwen/qwen3.8-27b',
+          preferredModel: model || 'llama-3.3-70b-versatile',
           systemPrompt,
           userPayload,
           signal: controller.signal,
         });
       }
 
-      if (effectiveProvider === 'custom') {
-        const cleanBase = (baseUrl || 'https://api.openai.com/v1')
+      if (activeProvider === 'custom') {
+        const rawBase = (baseUrl || 'https://api.openai.com/v1')
           .trim()
           .replace(/\/+$/, '');
-        const endpoint = cleanBase.endsWith('/chat/completions')
-          ? cleanBase
-          : `${cleanBase}/chat/completions`;
+        const endpoint = rawBase.endsWith('/chat/completions')
+          ? rawBase
+          : `${rawBase}/chat/completions`;
+
         return await callOpenAiCompatibleProvider({
           providerLabel: 'Custom AI',
           endpoint,
@@ -260,12 +282,11 @@ export const geminiClient: SemanticCompletionClient = {
         });
       }
 
-      // Google Gemini provider
-      const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        model || 'gemini-2.5-flash'
-      )}:generateContent`;
+      // Default: Google Gemini 2.5 Flash with native responseSchema
+      const geminiModel = encodeURIComponent(model || 'gemini-2.5-flash');
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
 
-      const response = await fetch(geminiEndpoint, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -319,28 +340,28 @@ export const geminiClient: SemanticCompletionClient = {
       const data = (await response.json()) as {
         candidates?: Array<{
           content?: {
-            parts?: Array<{ text?: string }>;
+            parts?: Array<{
+              text?: string;
+            }>;
           };
         }>;
       };
 
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!rawText) {
-        throw new GeminiApiError(
-          'Gemini API returned an empty candidate payload'
-        );
+        throw new GeminiApiError('Gemini API returned an empty candidate payload');
       }
 
       return extractJsonFromLlmOutput(rawText);
-    } catch (error) {
-      if (error instanceof GeminiApiError) {
-        throw error;
+    } catch (err) {
+      if (err instanceof GeminiApiError) {
+        throw err;
       }
-      if (error instanceof DOMException && error.name === 'AbortError') {
+      if (err instanceof DOMException && err.name === 'AbortError') {
         throw new GeminiApiError('AI API request timed out after 18s');
       }
       throw new GeminiApiError(
-        error instanceof Error ? error.message : 'Network error contacting AI API'
+        err instanceof Error ? err.message : 'Network error contacting AI API'
       );
     } finally {
       clearTimeout(timeoutId);
