@@ -76,8 +76,11 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
   if (!plan || plan.groups.length === 0) {
     return (
       <div className="rounded-xl border border-slate-800/70 bg-prism-surface/60 p-5 text-center">
-        <p className="text-xs text-slate-400">
-          No groupable web tabs found in this window.
+        <p className="text-xs text-slate-300 font-medium">
+          Ready to cluster tabs
+        </p>
+        <p className="text-[11px] text-slate-400 mt-1">
+          Click <span className="text-emerald-400 font-semibold">Prism Tabs</span> or press <kbd className="rounded bg-black/40 px-1 py-0.5 text-[10px] font-mono text-slate-300 border border-white/10">Alt+P</kbd>
         </p>
       </div>
     );
@@ -174,7 +177,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                   className="text-slate-500 hover:text-red-400 transition-colors p-0.5 rounded"
                   title={
                     isExistingGroup
-                      ? 'Ungroup this cluster'
+                      ? 'Ungroup tabs in this cluster (keeps tabs open)'
                       : 'Remove group from preview'
                   }
                 >

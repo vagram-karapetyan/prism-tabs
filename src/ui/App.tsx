@@ -180,6 +180,8 @@ export const App: React.FC = () => {
         currentExistingGroups.length > 0
       ) {
         setPlan(buildExistingWindowGroupsPlan(windowTabs, currentExistingGroups));
+      } else if (loadedSettings.mode === 'meaning') {
+        setPlan(null);
       } else {
         setPlan(
           computeLogicPlanForWindow(
@@ -216,6 +218,8 @@ export const App: React.FC = () => {
         setPlan(computeLogicPlanForWindow(tabs, next, existingGroups));
       } else if (existingGroups.length > 0) {
         setPlan(buildExistingWindowGroupsPlan(tabs, existingGroups));
+      } else {
+        setPlan(null);
       }
     },
     [tabs, existingGroups, computeLogicPlanForWindow]
