@@ -3,7 +3,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](./LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-emerald.svg)](./public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](./tsconfig.json)
-[![Tests](https://img.shields.io/badge/Tests-55%2F55%20passing-brightgreen.svg)](./tests)
+[![Tests](https://img.shields.io/badge/Tests-58%2F58%20passing-brightgreen.svg)](./tests)
 [![AI Engine](https://img.shields.io/badge/AI-Groq%20%7C%20Gemini%20%7C%20BYOK-orange.svg)](#3-configuring-ai-providers-optional--meaning-mode)
 
 **Prism** is a fast, privacy-first, open-source Google Chrome extension that eliminates tab overload through a **Dual-Engine Grouping Architecture**:
@@ -29,24 +29,28 @@
 
 ```mermaid
 flowchart TD
-    User["User Clicks 'Prism Tabs' or Presses Alt+P"] --> EmptyFilter["Filter Empty 'New Tab' Pages & Query Existing Window Groups"]
-    EmptyFilter --> ModeCheck{"Selected Engine Mode?"}
+    Start["User Action<br/>Click 'Prism Tabs' or Alt+P"] --> Scan["Scan Active Window<br/>Filter empty tabs & get groups"]
+    Scan --> Mode{"Engine<br/>Mode?"}
 
-    ModeCheck -- "Logic Mode (Offline <1ms)" --> DetEngine["7-Stage Deterministic Engine (/src/engine/deterministic.ts)"]
-    ModeCheck -- "Meaning Mode (BYOK AI)" --> Sanitizer["Privacy Sanitizer (Strip query params, tokens & chrome:// URLs)"]
+    %% Logic Branch
+    Mode -->|"⚡ Logic Mode (<1ms)"| Logic["Deterministic 7-Stage Engine<br/>Platform rules & tab tree<br/>Jaccard NLP & custom Regex"]
 
-    Sanitizer --> PromptBuilder["Prompt Builder (+ Existing Groups Context & User Directives)"]
-    PromptBuilder --> AIClient["Multi-Provider AI Client (Groq LPU Rotation / Gemini / Custom)"]
+    %% Meaning Branch
+    Mode -->|"✨ Meaning Mode (AI)"| Sanitize["Privacy Sanitizer<br/>Strip tokens & query params"]
+    Sanitize --> Prompt["Prompt Builder<br/>Inject directives & context"]
+    Prompt --> AI["Multi-Provider AI Client<br/>Groq LPU / Gemini / Custom"]
+    AI --> Validate["Schema Validator<br/>JSON check & smart merge"]
 
-    AIClient -- "200 OK" --> Validator["Schema Validator & Non-Destructive Group Merger"]
-    AIClient -- "Error / Rate Limit / No Key" --> Fallback["Graceful Fallback Banner + Offline Logic Mode"]
-    Fallback --> DetEngine
+    %% Fallback
+    AI -.->|"On error / rate limit"| Logic
 
-    DetEngine --> Plan["GroupingPlan (Color Harmony Allocator)"]
-    Validator --> Plan
+    %% Convergence
+    Logic --> Plan["Grouping Plan<br/>Color harmony allocation"]
+    Validate --> Plan
 
-    Plan --> Choreography["Staggered Tab Strip Choreography + Auto-Collapse Inactive Groups"]
-    Choreography --> Cleanup["Close Empty 'New Tab' Pages in Active Window"]
+    %% Execution
+    Plan --> Apply["Tab Strip Choreography<br/>Staggered moves & auto-collapse"]
+    Apply --> Clean["Active Window Cleanup<br/>Close discarded blank tabs"]
 ```
 
 ### Project Directory Structure
@@ -122,7 +126,7 @@ Running `npm run build` compiles TypeScript and bundles the production extension
 ### 4. Running Tests & Typecheck
 
 ```bash
-# Run the Vitest unit test suite (28 tests)
+# Run the Vitest unit test suite (58 tests)
 npm test
 
 # Run TypeScript strict type-checking
