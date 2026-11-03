@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <!-- Outer badge background with high-contrast border for both Light and Dark Chrome themes -->
+    <linearGradient id="bgGrad" x1="12" y1="8" x2="116" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#131726"/>
+      <stop offset="55%" stop-color="#0B0E17"/>
+      <stop offset="100%" stop-color="#191D32"/>
+    </linearGradient>
+    <linearGradient id="rimGrad" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#818CF8" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#F472B6" stop-opacity="0.85"/>
+    </linearGradient>
+    <!-- Glass Prism Body -->
+    <linearGradient id="prismGlass" x1="34" y1="26" x2="94" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="35%" stop-color="#CBD5E1" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.48"/>
+    </linearGradient>
+    <!-- Inner core refraction glow -->
+    <linearGradient id="innerCore" x1="48" y1="56" x2="82" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#EC4899" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Squircle Badge -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bgGrad)" stroke="url(#rimGrad)" stroke-width="4"/>
+
+  <!-- Incoming Coherent White Light Beam -->
+  <path d="M10 70L45 58" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M10 70L45 58" stroke="#E0E7FF" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Refracted Spectral Beams (Right Side) -->
+  <path d="M77 46L116 28" stroke="#EF4444" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M80 54L118 43" stroke="#F97316" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M83 62L119 58" stroke="#EAB308" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M85 70L119 73" stroke="#22C55E" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M87 78L118 88" stroke="#06B6D4" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M89 86L114 102" stroke="#A855F7" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Internal dispersion fan inside the prism -->
+  <polygon points="45,58 78,46 88,85" fill="url(#innerCore)" opacity="0.7"/>
+
+  <!-- Crystalline Triangular Prism -->
+  <polygon
+    points="62,20 24,98 100,98"
+    fill="url(#prismGlass)"
+    stroke="#F8FAFC"
+    stroke-width="4"
+    stroke-linejoin="round"
+  />
+  <!-- Specular highlight facet -->
+  <path d="M62 24L42 94" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.55" stroke-linecap="round"/>
+</svg>
