@@ -64,33 +64,12 @@ export const RulesDrawer: React.FC<RulesDrawerProps> = ({
       <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
           <Sliders className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Deterministic Logic Rules & Smart Merge</span>
+          <span>Deterministic Logic Rules & Heuristics</span>
         </div>
       </div>
 
-      {/* Domain & Smart Merge Toggles */}
+      {/* Domain & Clustering Heuristics Toggles */}
       <div className="grid grid-cols-2 gap-2 text-[11px]">
-        <button
-          type="button"
-          onClick={() =>
-            onUpdateOptions({
-              preserveExistingGroups: !options.preserveExistingGroups,
-            })
-          }
-          className="col-span-2 flex items-center justify-between gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 px-2.5 py-1.5 text-left text-slate-200 hover:border-emerald-500/50"
-        >
-          <span className="flex items-center gap-1.5 truncate">
-            {options.preserveExistingGroups ? (
-              <CheckSquare className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            ) : (
-              <Square className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-            )}
-            <span className="font-medium truncate">
-              Non-Destructive Smart Merge (Keep Existing Groups)
-            </span>
-          </span>
-        </button>
-
         <button
           type="button"
           onClick={() =>

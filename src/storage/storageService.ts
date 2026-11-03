@@ -23,7 +23,6 @@ export function getEnvGroqApiKey(): string {
 
 export const DEFAULT_PRISM_SETTINGS: PrismSettings = {
   mode: 'logic',
-  tabStripOrientation: 'horizontal',
   aiProvider: 'groq',
   groqApiKey: getEnvGroqApiKey(),
   groqModel: 'llama-3.3-70b-versatile',
@@ -34,7 +33,6 @@ export const DEFAULT_PRISM_SETTINGS: PrismSettings = {
   customModel: 'gpt-4o-mini',
   customPromptDirective: DEFAULT_PROMPT_PRESETS[0].directive,
   promptPresets: DEFAULT_PROMPT_PRESETS,
-  instantExecution: true,
   collapseOthersOnGroup: true,
   closeEmptyTabs: true,
   deterministicOptions: DEFAULT_DETERMINISTIC_OPTIONS,

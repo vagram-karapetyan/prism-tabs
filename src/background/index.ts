@@ -6,6 +6,7 @@ import {
   closeEmptyTabsInWindow,
   getCurrentWindowTabGroups,
   getCurrentWindowTabs,
+  hasUngroupedGroupableWebTabs,
   isEmptyBrowserTab,
   ungroupAllTabsInWindow,
 } from '../services/chromeTabsService';
@@ -35,9 +36,16 @@ async function executeQuickPrismSort(): Promise<void> {
     : allWindowTabs;
 
   if (tabs.length > 0) {
-    const existingGroups = settings.deterministicOptions.preserveExistingGroups
-      ? await getCurrentWindowTabGroups(tabs)
-      : [];
+    const currentExistingGroups = await getCurrentWindowTabGroups(tabs);
+    const hasUngrouped = hasUngroupedGroupableWebTabs(
+      tabs,
+      currentExistingGroups
+    );
+    const existingGroups =
+      settings.deterministicOptions.preserveExistingGroups && hasUngrouped
+        ? currentExistingGroups
+        : [];
+
     const undoSnapshot = await captureUndoSnapshot();
     await saveLastUndoSnapshot(undoSnapshot);
 

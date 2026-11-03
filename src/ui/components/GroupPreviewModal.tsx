@@ -151,7 +151,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                 />
               </div>
 
-              {/* Right: Merge counter (only when new tabs added) + Tab count + Remove button */}
+              {/* Right: Merge counter (only when new tabs added) + Tab count + Ungroup/Remove button */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {isExistingGroup && addedCount > 0 && (
                   <span
@@ -169,16 +169,18 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                   {group.tabIds.length}
                 </span>
 
-                {!isExistingGroup && (
-                  <button
-                    type="button"
-                    onClick={() => onRemoveGroup(group.id)}
-                    className="text-slate-500 hover:text-red-400 transition-colors p-0.5 rounded"
-                    title="Remove group from preview"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onRemoveGroup(group.id)}
+                  className="text-slate-500 hover:text-red-400 transition-colors p-0.5 rounded"
+                  title={
+                    isExistingGroup
+                      ? 'Ungroup this cluster'
+                      : 'Remove group from preview'
+                  }
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
             </div>
 

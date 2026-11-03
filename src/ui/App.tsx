@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  extractDomainInfo,
   parseExistingGroupTitle,
   runDeterministicGrouping,
 } from '../engine/deterministic';
@@ -23,9 +22,12 @@ import {
   closeEmptyTabsInWindow,
   getCurrentWindowTabGroups,
   getCurrentWindowTabs,
+  hasUngroupedGroupableWebTabs,
   isEmptyBrowserTab,
   restoreUndoSnapshot,
   ungroupAllTabsInWindow,
+  ungroupSpecificTabs,
+  updateLiveChromeTabGroup,
 } from '../services/chromeTabsService';
 import { geminiClient } from '../services/geminiService';
 import {
@@ -56,24 +58,6 @@ import {
 } from 'lucide-react';
 
 type SettingsTab = 'ai' | 'rules';
-
-/**
- * Checks whether the current window has any real groupable web tabs outside existing Chrome tab groups.
- * Excludes pinned tabs, empty New Tabs, and internal browser pages (`chrome://`, `edge://`, `about:`).
- */
-function hasUngroupedGroupableWebTabs(
-  windowTabs: TabMetadata[],
-  existingGroups: ExistingTabGroup[]
-): boolean {
-  const groupedIds = new Set(existingGroups.flatMap((eg) => eg.tabIds));
-  return windowTabs.some(
-    (t) =>
-      !t.pinned &&
-      !isEmptyBrowserTab(t) &&
-      !extractDomainInfo(t.url).isInternalBrowserUrl &&
-      !groupedIds.has(t.id)
-  );
-}
 
 /**
  * Builds a GroupingPlan representing the currently active Chrome Tab Groups in the window.
@@ -333,6 +317,7 @@ export const App: React.FC = () => {
       const refreshedGroups = await getCurrentWindowTabGroups(refreshedTabs);
       setTabs(refreshedTabs);
       setExistingGroups(refreshedGroups);
+      setPlan({ ...computedPlan, groups: [...computedPlan.groups] });
 
       if (closedEmptyCount > 0) {
         showToast(
@@ -360,11 +345,20 @@ export const App: React.FC = () => {
     (groupId: string, updates: Partial<ProposedTabGroup>) => {
       setPlan((prev) => {
         if (!prev) return prev;
+        const nextGroups = prev.groups.map((g) => {
+          if (g.id !== groupId) return g;
+          const updated = { ...g, ...updates };
+          if (typeof updated.existingGroupId === 'number') {
+            void updateLiveChromeTabGroup(updated.existingGroupId, {
+              title: `${updated.emoji} ${updated.groupName}`.trim(),
+              color: updated.color,
+            });
+          }
+          return updated;
+        });
         return {
           ...prev,
-          groups: prev.groups.map((g) =>
-            g.id === groupId ? { ...g, ...updates } : g
-          ),
+          groups: nextGroups,
         };
       });
     },
@@ -374,6 +368,10 @@ export const App: React.FC = () => {
   const handleRemoveGroupFromPlan = useCallback((groupId: string) => {
     setPlan((prev) => {
       if (!prev) return prev;
+      const target = prev.groups.find((g) => g.id === groupId);
+      if (target && typeof target.existingGroupId === 'number') {
+        void ungroupSpecificTabs(target.tabIds);
+      }
       return {
         ...prev,
         groups: prev.groups.filter((g) => g.id !== groupId),

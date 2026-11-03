@@ -14,8 +14,6 @@ export type ChromeTabGroupColor = (typeof CHROME_TAB_GROUP_COLORS)[number];
 
 export type EngineMode = 'logic' | 'meaning';
 
-export type TabStripOrientation = 'horizontal' | 'vertical';
-
 export type AiProvider = 'groq' | 'gemini' | 'custom';
 
 export type GroqModelId =
@@ -23,9 +21,7 @@ export type GroqModelId =
   | 'openai/gpt-oss-120b'
   | 'openai/gpt-oss-20b'
   | 'qwen/qwen3.8-27b'
-  | 'llama-3.1-8b-instant'
-  | 'mixtral-8x7b-32768'
-  | 'gemma2-9b-it';
+  | 'llama-3.1-8b-instant';
 
 export type GeminiModelId =
   | 'gemini-2.5-flash'
@@ -108,7 +104,7 @@ export interface ProposedTabGroup {
   emoji: string;
   color: ChromeTabGroupColor;
   tabIds: number[];
-  /** Present when this group preserves/extends an existing Chrome Tab Group */
+  /** Present when this group preserves/extends an existing or newly created Chrome Tab Group */
   existingGroupId?: number;
   /** Tabs already inside the existing group prior to sorting */
   existingTabIds?: number[];
@@ -160,7 +156,6 @@ export interface UndoSnapshot {
 
 export interface PrismSettings {
   mode: EngineMode;
-  tabStripOrientation: TabStripOrientation;
   /** Active AI provider for Meaning Mode ('groq' recommended by default) */
   aiProvider: AiProvider;
   groqApiKey: string;
@@ -172,9 +167,8 @@ export interface PrismSettings {
   customModel: string;
   customPromptDirective: string;
   promptPresets: CustomPromptPreset[];
-  instantExecution: boolean;
   collapseOthersOnGroup: boolean;
-  /** Automatically close blank/New Tab pages in the current window before grouping (default: true) */
+  /** Automatically close blank/New Tab pages in the current window after grouping (default: true) */
   closeEmptyTabs: boolean;
   deterministicOptions: DeterministicOptions;
   customRules: DeterministicRule[];

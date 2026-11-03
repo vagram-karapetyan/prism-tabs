@@ -1,4 +1,7 @@
-import { parseExistingGroupTitle } from '../engine/deterministic';
+import {
+  extractDomainInfo,
+  parseExistingGroupTitle,
+} from '../engine/deterministic';
 import {
   ChromeTabGroupColor,
   ExistingTabGroup,
@@ -61,6 +64,24 @@ export function isEmptyBrowserTab(tab: {
   }
 
   return EMPTY_TAB_URL_PATTERNS.some((rx) => rx.test(rawUrl));
+}
+
+/**
+ * Checks whether the current window has any real groupable web tabs outside existing Chrome tab groups.
+ * Excludes pinned tabs, empty New Tabs, and internal browser pages (`chrome://`, `edge://`, `about:`).
+ */
+export function hasUngroupedGroupableWebTabs(
+  windowTabs: TabMetadata[],
+  existingGroups: ExistingTabGroup[]
+): boolean {
+  const groupedIds = new Set(existingGroups.flatMap((eg) => eg.tabIds));
+  return windowTabs.some(
+    (t) =>
+      !t.pinned &&
+      !isEmptyBrowserTab(t) &&
+      !extractDomainInfo(t.url).isInternalBrowserUrl &&
+      !groupedIds.has(t.id)
+  );
 }
 
 /**
@@ -421,6 +442,7 @@ export async function applyGroupingPlan(
       });
 
       const targetGroupId = group.existingGroupId ?? idx + 10;
+      group.existingGroupId = targetGroupId;
       const isLastGroup = idx === plan.groups.length - 1;
       demoGroupMeta.set(targetGroupId, {
         title: `${group.emoji} ${group.groupName}`.trim(),
@@ -601,6 +623,8 @@ export async function applyGroupingPlan(
           : undefined,
     });
 
+    group.existingGroupId = newGroupId;
+
     await chrome.tabGroups.update(newGroupId, {
       title: formattedTitle,
       color: group.color,
@@ -612,6 +636,54 @@ export async function applyGroupingPlan(
   }
 
   emitProgress({ phase: 'complete', activeGroupId: null, activeTabId: null });
+}
+
+/**
+ * Updates a live Chrome Tab Group's title or color in the active window when the user
+ * edits a group inline in the popup.
+ */
+export async function updateLiveChromeTabGroup(
+  chromeGroupId: number,
+  updates: { title?: string; color?: ChromeTabGroupColor }
+): Promise<void> {
+  if (!isChromeTabsAvailable()) {
+    const existing = demoGroupMeta.get(chromeGroupId);
+    if (existing) {
+      demoGroupMeta.set(chromeGroupId, {
+        ...existing,
+        ...(updates.title !== undefined ? { title: updates.title } : {}),
+        ...(updates.color !== undefined ? { color: updates.color } : {}),
+      });
+    }
+    return;
+  }
+
+  try {
+    await chrome.tabGroups.update(chromeGroupId, updates);
+  } catch {
+    // Ignore if the group does not exist in Chrome yet
+  }
+}
+
+/**
+ * Ungroups a specific set of tab IDs in the current window if they are currently grouped.
+ */
+export async function ungroupSpecificTabs(tabIds: number[]): Promise<void> {
+  if (tabIds.length === 0) return;
+
+  if (!isChromeTabsAvailable()) {
+    const targetSet = new Set(tabIds);
+    demoTabState = demoTabState.map((t) =>
+      targetSet.has(t.id) ? { ...t, groupId: -1 } : t
+    );
+    return;
+  }
+
+  try {
+    await chrome.tabs.ungroup(tabIds);
+  } catch {
+    // Ignore if tabs are already ungrouped
+  }
 }
 
 /**
