@@ -11,6 +11,7 @@ import {
   ExistingTabGroup,
   GroupingPlan,
   PrismSettings,
+  PrismThemeId,
   ProposedTabGroup,
   SortChoreographyProgress,
   TabMetadata,
@@ -43,12 +44,15 @@ import { GroupPreviewList } from './components/GroupPreviewModal';
 import { PrismRefractionBar } from './components/PrismRefractionBar';
 import { RulesDrawer } from './components/RulesDrawer';
 import { SemanticSettingsDrawer } from './components/SemanticSettingsDrawer';
+import { ThemeSelector } from './components/ThemeSelector';
+import { applyPrismTheme } from './themes';
 import {
   AlertTriangle,
   Check,
   Cpu,
   Layers,
   Loader2,
+  Palette,
   RotateCcw,
   Settings,
   Sparkles,
@@ -57,7 +61,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-type SettingsTab = 'ai' | 'rules';
+type SettingsTab = 'themes' | 'ai' | 'rules';
 
 /**
  * Builds a GroupingPlan representing the currently active Chrome Tab Groups in the window.
@@ -177,6 +181,7 @@ export const App: React.FC = () => {
       if (!mounted) return;
 
       setSettings(loadedSettings);
+      applyPrismTheme(loadedSettings.theme || 'prism-deep');
       setTabs(windowTabs);
       setExistingGroups(currentExistingGroups);
       setUndoSnapshot(lastUndo);
@@ -213,6 +218,14 @@ export const App: React.FC = () => {
       }
     },
     [tabs, existingGroups, computeLogicPlanForWindow]
+  );
+
+  const handleSelectTheme = useCallback(
+    (theme: PrismThemeId) => {
+      applyPrismTheme(theme);
+      void handleUpdateSettings({ theme });
+    },
+    [handleUpdateSettings]
   );
 
   const handleSwitchMode = useCallback(
@@ -478,7 +491,7 @@ export const App: React.FC = () => {
       : 'Gemini';
 
   return (
-    <div className="flex flex-col max-h-[440px] bg-prism-bg text-slate-100 p-3 gap-2 select-none">
+    <div className="flex flex-col min-h-[360px] max-h-[440px] bg-prism-bg text-slate-100 p-3 gap-2 select-none">
       {/* Top Minimal Header Bar */}
       <header className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-2">
@@ -605,8 +618,20 @@ export const App: React.FC = () => {
             </label>
           </div>
 
-          {/* Sub-Tabs for AI Setup vs. Logic Rules */}
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-950 p-1 border border-slate-800 text-[11px]">
+          {/* Sub-Tabs for Themes vs. AI Setup vs. Logic Rules */}
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-950 p-1 border border-slate-800 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setSettingsTab('themes')}
+              className={`flex items-center justify-center gap-1 rounded-md py-1 font-medium transition-colors ${
+                settingsTab === 'themes'
+                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-500/40'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Palette className="w-3 h-3" />
+              <span>Themes</span>
+            </button>
             <button
               type="button"
               onClick={() => setSettingsTab('ai')}
@@ -616,7 +641,7 @@ export const App: React.FC = () => {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              AI Setup ({providerLabel})
+              AI ({providerLabel})
             </button>
             <button
               type="button"
@@ -627,11 +652,16 @@ export const App: React.FC = () => {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Logic Rules
+              Rules
             </button>
           </div>
 
-          {settingsTab === 'ai' ? (
+          {settingsTab === 'themes' ? (
+            <ThemeSelector
+              currentTheme={settings.theme || 'prism-deep'}
+              onSelectTheme={handleSelectTheme}
+            />
+          ) : settingsTab === 'ai' ? (
             <SemanticSettingsDrawer
               settings={settings}
               onSaveSettings={handleUpdateSettings}

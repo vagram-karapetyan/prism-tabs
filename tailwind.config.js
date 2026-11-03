@@ -8,11 +8,11 @@ export default {
     extend: {
       colors: {
         prism: {
-          bg: '#090A0F',
-          surface: '#12151E',
-          card: '#181C28',
-          border: '#262C3E',
-          accent: '#6366F1',
+          bg: 'var(--prism-bg)',
+          surface: 'var(--prism-surface)',
+          card: 'var(--prism-card)',
+          border: 'var(--prism-border)',
+          accent: 'var(--prism-accent)',
         },
       },
       animation: {

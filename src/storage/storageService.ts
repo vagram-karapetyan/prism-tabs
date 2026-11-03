@@ -19,6 +19,7 @@ export function getEnvGroqApiKey(): string {
 }
 
 export const DEFAULT_PRISM_SETTINGS: PrismSettings = {
+  theme: 'prism-deep',
   mode: 'logic',
   aiProvider: 'groq',
   groqApiKey: getEnvGroqApiKey(),
@@ -131,6 +132,7 @@ export async function loadSettings(): Promise<PrismSettings> {
   if (!stored) {
     const initial: PrismSettings = {
       ...DEFAULT_PRISM_SETTINGS,
+      theme: 'prism-deep',
       groqApiKey: envGroqKey,
     };
     await rawSet(SETTINGS_STORAGE_KEY, initial);
@@ -141,6 +143,7 @@ export async function loadSettings(): Promise<PrismSettings> {
 
   const merged: PrismSettings = {
     ...DEFAULT_PRISM_SETTINGS,
+    theme: stored.theme || 'prism-deep',
     ...stored,
     groqApiKey: resolvedGroqKey,
     closeEmptyTabs: stored.closeEmptyTabs ?? true,

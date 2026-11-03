@@ -154,7 +154,17 @@ export interface UndoSnapshot {
   entries: TabUndoEntry[];
 }
 
+export type PrismThemeId =
+  | 'prism-deep'
+  | 'midnight-nebula'
+  | 'emerald-forest'
+  | 'sunset-amber'
+  | 'arctic-frost'
+  | 'pure-light';
+
 export interface PrismSettings {
+  /** Visual theme for the popup interface (default: 'prism-deep') */
+  theme?: PrismThemeId;
   mode: EngineMode;
   /** Active AI provider for Meaning Mode ('groq' recommended by default) */
   aiProvider: AiProvider;

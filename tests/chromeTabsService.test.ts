@@ -185,3 +185,4 @@ describe('Chrome Tabs Service — Undo Snapshot & Tab Operations', () => {
     expect(closed).toBeGreaterThanOrEqual(0);
   });
 });
+

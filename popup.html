@@ -3,7 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" id="prism-color-scheme" />
     <title>Prism — Dual-Engine Tab Organizer</title>
+    <style>
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 390px !important;
+        overflow: hidden !important;
+        background-color: #090A0F;
+        color-scheme: dark;
+      }
+      #root {
+        width: 390px;
+        min-height: 360px;
+        max-height: 440px;
+        background-color: #090A0F;
+      }
+    </style>
   </head>
   <body class="bg-prism-bg text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
     <div id="root"></div>
