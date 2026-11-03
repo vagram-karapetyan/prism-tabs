@@ -44,7 +44,7 @@ export const PrismRefractionBar: React.FC<PrismRefractionBarProps> = ({
     : 100;
 
   return (
-    <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-800/80 bg-gradient-to-r from-slate-950 via-[#0E1320] to-slate-950 px-3.5 py-2.5 shadow-inner">
+    <div className="relative shrink-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/80 bg-gradient-to-r from-slate-950 via-[#0E1320] to-slate-950 px-3.5 py-2.5 shadow-inner">
       {/* Laser Light-Beam Progress Track */}
       <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-slate-900/90 overflow-hidden">
         <div

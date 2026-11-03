@@ -60,7 +60,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
         {[1, 2, 3].map((n) => (
           <div
             key={n}
-            className="rounded-xl border border-slate-800/80 bg-prism-surface/90 px-3 py-2.5 flex items-center justify-between"
+            className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-prism-surface/90 px-3 py-2.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-full skeleton-shimmer" />
@@ -75,12 +75,12 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
 
   if (!plan || plan.groups.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-800/70 bg-prism-surface/60 p-5 text-center">
-        <p className="text-xs text-slate-300 font-medium">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800/70 bg-prism-surface/60 p-5 text-center shadow-2xs">
+        <p className="text-xs text-slate-800 dark:text-slate-300 font-semibold">
           Ready to cluster tabs
         </p>
-        <p className="text-[11px] text-slate-400 mt-1">
-          Click <span className="text-emerald-400 font-semibold">Prism Tabs</span> or press <kbd className="rounded bg-black/40 px-1 py-0.5 text-[10px] font-mono text-slate-300 border border-white/10">Alt+P</kbd>
+        <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+          Click <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Prism Tabs</span> or press <kbd className="rounded bg-slate-100 dark:bg-black/40 px-1 py-0.5 text-[10px] font-mono text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/10">Alt+P</kbd>
         </p>
       </div>
     );
@@ -104,12 +104,12 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
         return (
           <div
             key={group.id}
-            className={`rounded-xl border transition-all duration-200 bg-prism-card/90 ${
+            className={`rounded-xl border transition-all duration-200 bg-prism-card/90 shadow-2xs ${
               isChoreoActive
-                ? 'ring-1 ring-indigo-400/80 border-white/40 shadow-sm'
+                ? 'ring-1 ring-indigo-400/80 border-indigo-400/60 shadow-sm'
                 : isChoreoCompleted
-                ? `${colorStyle.borderClass} bg-emerald-950/15`
-                : `${colorStyle.borderClass} hover:border-slate-600/80`
+                ? `${colorStyle.borderClass} bg-emerald-50 dark:bg-emerald-950/15`
+                : `${colorStyle.borderClass} hover:border-slate-400 dark:hover:border-slate-600/80`
             }`}
           >
             <div className="flex items-center justify-between gap-2 px-2.5 py-1.5">
@@ -118,7 +118,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                 <button
                   type="button"
                   onClick={() => toggleExpand(group.id)}
-                  className="text-slate-400 hover:text-slate-200 transition-colors p-0.5"
+                  className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors p-0.5"
                   title={isExpanded ? 'Collapse tabs' : 'View tabs in group'}
                 >
                   {isExpanded ? (
@@ -149,7 +149,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                   onChange={(e) =>
                     onUpdateGroup(group.id, { groupName: e.target.value })
                   }
-                  className="bg-transparent text-xs font-medium text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/60 rounded px-1 py-0.5 min-w-0 flex-1 truncate"
+                  className="bg-transparent text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500/60 rounded px-1 py-0.5 min-w-0 flex-1 truncate"
                   aria-label="Group name"
                 />
               </div>
@@ -158,7 +158,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
               <div className="flex items-center gap-1.5 shrink-0">
                 {isExistingGroup && addedCount > 0 && (
                   <span
-                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/20 text-emerald-300"
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
                     title={`Merged +${addedCount} tabs into "${group.groupName}"`}
                   >
                     <GitMerge className="w-2.5 h-2.5" />
@@ -167,14 +167,15 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                 )}
 
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${colorStyle.bgClass} ${colorStyle.textClass}`}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${colorStyle.bgClass} ${colorStyle.textClass}`}
                 >
-                  {group.tabIds.length}</span>
+                  {group.tabIds.length}
+                </span>
 
                 <button
                   type="button"
                   onClick={() => onRemoveGroup(group.id)}
-                  className="text-slate-500 hover:text-red-400 transition-colors p-0.5 rounded"
+                  className="text-slate-400 hover:text-red-500 transition-colors p-0.5 rounded"
                   title={
                     isExistingGroup
                       ? 'Ungroup tabs in this cluster (keeps tabs open)'
@@ -188,8 +189,8 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
 
             {/* Inline Chrome Tab Group Color Swatch Bar */}
             {isColorPickerOpen && (
-              <div className="flex items-center justify-between px-3 py-1.5 border-t border-slate-800/80 bg-slate-950/60">
-                <span className="text-[10px] text-slate-400">Group color:</span>
+              <div className="flex items-center justify-between px-3 py-1.5 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60">
+                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Group color:</span>
                 <div className="flex items-center gap-1.5">
                   {CHROME_TAB_GROUP_COLORS.map((c: ChromeTabGroupColor) => {
                     const meta = CHROME_COLOR_STYLES[c];
@@ -205,7 +206,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                         style={{ backgroundColor: meta.hex }}
                         className={`w-3 h-3 rounded-full transition-transform ${
                           selected
-                            ? 'scale-125 ring-2 ring-white'
+                            ? 'scale-125 ring-2 ring-indigo-500 dark:ring-white'
                             : 'opacity-75 hover:opacity-100 hover:scale-110'
                         }`}
                         title={meta.label}
@@ -218,9 +219,9 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
 
             {/* Expanded Tab List */}
             {isExpanded && (
-              <div className="px-3 pb-2 pt-1 border-t border-slate-800/60 space-y-1 bg-slate-950/30">
+              <div className="px-3 pb-2 pt-1 border-t border-slate-200 dark:border-slate-800/60 space-y-1 bg-slate-50/70 dark:bg-slate-950/30">
                 {group.reasoning && (
-                  <p className="text-[10px] text-slate-400 italic">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
                     {group.reasoning}
                   </p>
                 )}
@@ -237,16 +238,16 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                         key={tabId}
                         className={`flex items-center justify-between gap-2 text-[11px] truncate rounded px-1 py-0.5 ${
                           isTabGliding
-                            ? 'bg-indigo-500/25 text-white font-medium'
-                            : 'text-slate-300'
+                            ? 'bg-indigo-500/25 text-indigo-900 dark:text-white font-medium'
+                            : 'text-slate-700 dark:text-slate-300'
                         }`}
                       >
                         <div className="flex items-center gap-1.5 min-w-0 flex-1">
                           <span
                             className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                               isNewlyMerged
-                                ? 'bg-emerald-400'
-                                : 'bg-slate-500'
+                                ? 'bg-emerald-500 dark:bg-emerald-400'
+                                : 'bg-slate-400 dark:bg-slate-500'
                             }`}
                           />
                           <span className="truncate" title={tab.title}>
@@ -254,7 +255,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                           </span>
                         </div>
                         {isNewlyMerged && (
-                          <span className="text-[9px] font-semibold text-emerald-300 shrink-0">
+                          <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-300 shrink-0">
                             +new
                           </span>
                         )}

@@ -491,14 +491,17 @@ export const App: React.FC = () => {
       : 'Gemini';
 
   return (
-    <div className="flex flex-col min-h-[360px] max-h-[440px] bg-prism-bg text-slate-100 p-3 gap-2 select-none">
+    <div className="flex flex-col min-h-[360px] max-h-[440px] bg-prism-bg text-slate-900 dark:text-slate-100 p-3 gap-2 select-none">
       {/* Top Minimal Header Bar */}
       <header className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-slate-700/80 flex items-center justify-center shadow-sm">
-            <Layers className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-slate-300 dark:border-slate-700/80 flex items-center justify-center shadow-xs">
+            <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <h1 className="text-sm font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+          <h1
+            className="text-sm font-bold tracking-tight bg-clip-text text-transparent"
+            style={{ backgroundImage: 'var(--prism-title-gradient)' }}
+          >
             PRISM
           </h1>
         </div>
@@ -509,10 +512,10 @@ export const App: React.FC = () => {
           onClick={() => setIsSettingsOpen((prev) => !prev)}
           className={`inline-flex items-center justify-center rounded-lg border p-1.5 transition-colors ${
             isSettingsOpen
-              ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-300'
-              : 'border-slate-800 bg-prism-surface text-slate-400 hover:text-slate-200'
+              ? 'border-indigo-500/60 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300'
+              : 'border-slate-200 dark:border-slate-800 bg-prism-surface text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
-          title="Settings (AI Setup, Rules, Smart Merge & Auto-Collapse)"
+          title="Settings (AI Setup, Rules, Themes & Behavior)"
           aria-label="Settings"
         >
           <Settings className="w-4 h-4" />
@@ -520,14 +523,14 @@ export const App: React.FC = () => {
       </header>
 
       {/* Dual-Engine Mode Switcher Pill */}
-      <div className="grid shrink-0 grid-cols-2 gap-1.5 rounded-xl bg-prism-surface p-1 border border-slate-800/90">
+      <div className="grid shrink-0 grid-cols-2 gap-1.5 rounded-xl bg-prism-surface p-1 border border-slate-200 dark:border-slate-800/90 shadow-2xs">
         <button
           type="button"
           onClick={() => handleSwitchMode('logic')}
           className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2.5 text-xs font-semibold transition-all ${
             settings.mode === 'logic'
-              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 shadow-xs'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
           }`}
         >
           <Cpu className="w-3.5 h-3.5" />
@@ -539,8 +542,8 @@ export const App: React.FC = () => {
           onClick={() => handleSwitchMode('meaning')}
           className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2.5 text-xs font-semibold transition-all ${
             settings.mode === 'meaning'
-              ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-500/40 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 border border-indigo-500/40 shadow-xs'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
@@ -552,8 +555,8 @@ export const App: React.FC = () => {
       {isSettingsOpen ? (
         <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 animate-fade-in">
           {/* Quick Behavior Toggles (Close Empty Tabs, Close YouTube Home, Preserve Existing Groups & Auto-Collapse) */}
-          <div className="rounded-xl border border-slate-800 bg-prism-surface/95 p-2.5 space-y-2 text-[11px]">
-            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-200">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-prism-surface/95 p-2.5 space-y-2 text-[11px] shadow-2xs">
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-700 dark:text-slate-200">
               <span>Close empty &ldquo;New Tab&rdquo; tabs</span>
               <input
                 type="checkbox"
@@ -563,14 +566,14 @@ export const App: React.FC = () => {
                     closeEmptyTabs: e.target.checked,
                   })
                 }
-                className="rounded accent-emerald-500"
+                className="rounded accent-emerald-500 cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-200 border-t border-slate-800/70 pt-1.5">
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-700 dark:text-slate-200 border-t border-slate-200 dark:border-slate-800/70 pt-1.5">
               <span className="flex items-center gap-1.5">
                 <span>Close YouTube homepage tabs</span>
-                <span className="text-[9px] font-mono text-slate-400 bg-slate-900 px-1 py-0.5 rounded border border-slate-800">
+                <span className="text-[9px] font-mono text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-800">
                   youtube.com/
                 </span>
               </span>
@@ -582,11 +585,11 @@ export const App: React.FC = () => {
                     closeYouTubeHomeTabs: e.target.checked,
                   })
                 }
-                className="rounded accent-emerald-500"
+                className="rounded accent-emerald-500 cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-200 border-t border-slate-800/70 pt-1.5">
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-700 dark:text-slate-200 border-t border-slate-200 dark:border-slate-800/70 pt-1.5">
               <span>Preserve existing groups (Smart Merge)</span>
               <input
                 type="checkbox"
@@ -599,11 +602,11 @@ export const App: React.FC = () => {
                     },
                   })
                 }
-                className="rounded accent-emerald-500"
+                className="rounded accent-emerald-500 cursor-pointer"
               />
             </label>
 
-            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-200 border-t border-slate-800/70 pt-1.5">
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-700 dark:text-slate-200 border-t border-slate-200 dark:border-slate-800/70 pt-1.5">
               <span>Auto-collapse inactive groups</span>
               <input
                 type="checkbox"
@@ -613,20 +616,20 @@ export const App: React.FC = () => {
                     collapseOthersOnGroup: e.target.checked,
                   })
                 }
-                className="rounded accent-indigo-500"
+                className="rounded accent-indigo-500 cursor-pointer"
               />
             </label>
           </div>
 
           {/* Sub-Tabs for Themes vs. AI Setup vs. Logic Rules */}
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-950 p-1 border border-slate-800 text-[11px]">
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 text-[11px]">
             <button
               type="button"
               onClick={() => setSettingsTab('themes')}
-              className={`flex items-center justify-center gap-1 rounded-md py-1 font-medium transition-colors ${
+              className={`flex items-center justify-center gap-1 rounded-md py-1 font-semibold transition-colors ${
                 settingsTab === 'themes'
-                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500/25 dark:text-indigo-200 dark:border dark:border-indigo-500/40'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Palette className="w-3 h-3" />
@@ -635,10 +638,10 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setSettingsTab('ai')}
-              className={`rounded-md py-1 font-medium transition-colors ${
+              className={`rounded-md py-1 font-semibold transition-colors ${
                 settingsTab === 'ai'
-                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500/25 dark:text-indigo-200 dark:border dark:border-indigo-500/40'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               AI ({providerLabel})
@@ -646,10 +649,10 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setSettingsTab('rules')}
-              className={`rounded-md py-1 font-medium transition-colors ${
+              className={`rounded-md py-1 font-semibold transition-colors ${
                 settingsTab === 'rules'
-                  ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-emerald-600 text-white shadow-xs dark:bg-emerald-500/25 dark:text-emerald-200 dark:border dark:border-emerald-500/40'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Rules
@@ -767,18 +770,18 @@ export const App: React.FC = () => {
 
       {/* Toast Notification Banner */}
       {statusMessage && !errorBanner && (
-        <div className="shrink-0 rounded-lg bg-slate-800/95 border border-slate-700 px-3 py-1 text-center text-[11px] font-medium text-emerald-300 animate-fade-in">
+        <div className="shrink-0 rounded-lg bg-emerald-50 dark:bg-slate-800/95 border border-emerald-200 dark:border-slate-700 px-3 py-1 text-center text-[11px] font-medium text-emerald-800 dark:text-emerald-300 animate-fade-in shadow-2xs">
           {statusMessage}
         </div>
       )}
 
       {/* Minimal Footer Bar: Undo & Ungroup All */}
-      <footer className="flex shrink-0 items-center justify-between border-t border-slate-800/80 pt-1.5 text-[11px]">
+      <footer className="flex shrink-0 items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-1.5 text-[11px]">
         <button
           type="button"
           disabled={!undoSnapshot}
           onClick={handleUndo}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-300 hover:text-white hover:border-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-2xs"
           title="Undo last grouping action (Ctrl+Z)"
         >
           <RotateCcw className="w-3 h-3" />
@@ -788,7 +791,7 @@ export const App: React.FC = () => {
         <button
           type="button"
           onClick={handleUngroupAll}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-300 hover:text-red-300 hover:border-red-500/30 transition-colors"
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-300 hover:border-red-400/40 dark:hover:border-red-500/30 transition-colors shadow-2xs"
           title="Ungroup all tabs in current window (Alt+U)"
         >
           <Unlink className="w-3 h-3" />

@@ -51,3 +51,4 @@ describe('Prism Modern Themes System', () => {
     expect(() => applyPrismTheme('prism-deep')).not.toThrow();
   });
 });
+

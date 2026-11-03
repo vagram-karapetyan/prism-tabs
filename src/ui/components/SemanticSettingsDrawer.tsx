@@ -32,16 +32,16 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
   const [savedNotice, setSavedNotice] = useState(false);
 
   const {
-    aiProvider,
-    groqApiKey,
-    groqModel,
-    geminiApiKey,
-    geminiModel,
-    customApiKey,
-    customBaseUrl,
-    customModel,
-    customPromptDirective,
-    promptPresets,
+  aiProvider,
+  groqApiKey,
+  groqModel,
+  geminiApiKey,
+  geminiModel,
+  customApiKey,
+  customBaseUrl,
+  customModel,
+  customPromptDirective,
+  promptPresets,
   } = settings;
 
   const handleSavePreset = () => {
@@ -60,28 +60,28 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
   };
 
   return (
-    <div className="rounded-xl border border-indigo-500/30 bg-prism-surface/95 p-3 space-y-2.5 animate-fade-in">
+    <div className="rounded-xl border border-slate-200 dark:border-indigo-500/30 bg-prism-surface/95 p-3 space-y-2.5 animate-fade-in shadow-2xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-300">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+          <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           <span>Multi-Provider BYOK AI & Directives</span>
         </div>
-        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400">
+        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
           <ShieldCheck className="w-3 h-3" />
           Local Storage
         </span>
       </div>
 
       {/* Provider Selector Tabs (Groq Recommended Default, Gemini, Custom) */}
-      <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-950 p-1 border border-slate-800 text-[10px]">
+      <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-100 dark:bg-slate-950 p-1 border border-slate-200 dark:border-slate-800 text-[10px]">
         <button
           type="button"
           onClick={() => onSaveSettings({ aiProvider: 'groq' as AiProvider })}
           className={`flex items-center justify-center gap-1 rounded-md py-1 px-1.5 font-semibold transition-all ${
             aiProvider === 'groq'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-amber-500 text-white shadow-xs dark:bg-amber-500/20 dark:text-amber-300 dark:border dark:border-amber-500/40'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           <Zap className="w-3 h-3" />
@@ -93,8 +93,8 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
           onClick={() => onSaveSettings({ aiProvider: 'gemini' as AiProvider })}
           className={`flex items-center justify-center gap-1 rounded-md py-1 px-1.5 font-semibold transition-all ${
             aiProvider === 'gemini'
-              ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-500/40'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500/20 dark:text-indigo-200 dark:border dark:border-indigo-500/40'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           <Sparkles className="w-3 h-3" />
@@ -106,8 +106,8 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
           onClick={() => onSaveSettings({ aiProvider: 'custom' as AiProvider })}
           className={`flex items-center justify-center gap-1 rounded-md py-1 px-1.5 font-semibold transition-all ${
             aiProvider === 'custom'
-              ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-cyan-600 text-white shadow-xs dark:bg-cyan-500/20 dark:text-cyan-200 dark:border dark:border-cyan-500/40'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           <Globe className="w-3 h-3" />
@@ -119,10 +119,10 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
       {aiProvider === 'groq' && (
         <div className="space-y-1.5 text-[11px]">
           <div className="flex items-center justify-between">
-            <label className="font-medium text-slate-300 flex items-center gap-1">
-              <KeyRound className="w-3 h-3 text-amber-400" />
+            <label className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <KeyRound className="w-3 h-3 text-amber-500 dark:text-amber-400" />
               <span>Groq API Key</span>
-              <span className="text-[9px] text-amber-300/90 bg-amber-500/15 px-1.5 py-0.2 rounded">
+              <span className="text-[9px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 px-1.5 py-0.2 rounded font-semibold">
                 Recommended
               </span>
             </label>
@@ -130,7 +130,7 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
               href="https://console.groq.com/keys"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[10px] text-amber-300 hover:text-amber-200 underline underline-offset-2"
+              className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-300 hover:text-amber-700 dark:hover:text-amber-200 underline underline-offset-2"
             >
               <span>Get free API key</span>
               <ExternalLink className="w-2.5 h-2.5" />
@@ -144,12 +144,12 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
                 value={groqApiKey}
                 onChange={(e) => onSaveSettings({ groqApiKey: e.target.value })}
                 placeholder="gsk_... (Stored in chrome.storage.local)"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 pl-2.5 pr-7 py-1 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-2.5 pr-7 py-1 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
               />
               <button
                 type="button"
                 onClick={() => setShowKey((prev) => !prev)}
-                className="absolute right-2 text-slate-400 hover:text-slate-200"
+                className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 title={showKey ? 'Hide API Key' : 'Show API Key'}
               >
                 {showKey ? (
@@ -165,7 +165,7 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
               onChange={(e) =>
                 onSaveSettings({ groqModel: e.target.value as GroqModelId })
               }
-              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-amber-200 focus:outline-none focus:border-amber-500"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[10px] text-slate-800 dark:text-amber-200 focus:outline-none focus:border-amber-500"
               aria-label="Groq Model"
             >
               <option value="llama-3.3-70b-versatile">Llama 3.3 70B</option>
@@ -181,15 +181,15 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
       {aiProvider === 'gemini' && (
         <div className="space-y-1.5 text-[11px]">
           <div className="flex items-center justify-between">
-            <label className="font-medium text-slate-300 flex items-center gap-1">
-              <KeyRound className="w-3 h-3 text-indigo-400" />
+            <label className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <KeyRound className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
               <span>Google Gemini API Key</span>
             </label>
             <a
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-[10px] text-indigo-300 hover:text-indigo-200 underline underline-offset-2"
+              className="inline-flex items-center gap-1 text-[10px] text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-200 underline underline-offset-2"
             >
               <span>Get free API key</span>
               <ExternalLink className="w-2.5 h-2.5" />
@@ -203,12 +203,12 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
                 value={geminiApiKey}
                 onChange={(e) => onSaveSettings({ geminiApiKey: e.target.value })}
                 placeholder="AIzaSy... (Stored in chrome.storage.local)"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 pl-2.5 pr-7 py-1 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-2.5 pr-7 py-1 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
               />
               <button
                 type="button"
                 onClick={() => setShowKey((prev) => !prev)}
-                className="absolute right-2 text-slate-400 hover:text-slate-200"
+                className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 title={showKey ? 'Hide API Key' : 'Show API Key'}
               >
                 {showKey ? (
@@ -224,7 +224,7 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
               onChange={(e) =>
                 onSaveSettings({ geminiModel: e.target.value as GeminiModelId })
               }
-              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-indigo-200 focus:outline-none focus:border-indigo-500"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[10px] text-slate-800 dark:text-indigo-200 focus:outline-none focus:border-indigo-500"
               aria-label="Gemini Model"
             >
               <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
@@ -243,7 +243,7 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
               value={customBaseUrl}
               onChange={(e) => onSaveSettings({ customBaseUrl: e.target.value })}
               placeholder="https://api.openai.com/v1"
-              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[10px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
               title="OpenAI-compatible Base URL"
             />
             <input
@@ -251,7 +251,7 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
               value={customModel}
               onChange={(e) => onSaveSettings({ customModel: e.target.value })}
               placeholder="Model (e.g. gpt-4o-mini)"
-              className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+              className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-[10px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
               title="Custom Model ID"
             />
           </div>
@@ -262,12 +262,12 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
               value={customApiKey}
               onChange={(e) => onSaveSettings({ customApiKey: e.target.value })}
               placeholder="sk-... (OpenAI-compatible API Key)"
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 pl-2.5 pr-7 py-1 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-2.5 pr-7 py-1 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
             />
             <button
               type="button"
               onClick={() => setShowKey((prev) => !prev)}
-              className="absolute right-2 text-slate-400 hover:text-slate-200"
+              className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
               {showKey ? (
                 <EyeOff className="w-3.5 h-3.5" />
@@ -280,13 +280,13 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
       )}
 
       {/* Custom User Prompting & Directives */}
-      <div className="space-y-1.5 text-[11px] border-t border-slate-800/80 pt-2">
+      <div className="space-y-1.5 text-[11px] border-t border-slate-200 dark:border-slate-800/80 pt-2">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-slate-200">
+          <span className="font-semibold text-slate-800 dark:text-slate-200">
             Custom AI Sorting Instructions / Directives
           </span>
           {savedNotice && (
-            <span className="text-[10px] text-emerald-400 font-medium">
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
               Saved preset!
             </span>
           )}
@@ -306,8 +306,8 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
                 }
                 className={`rounded-full px-2 py-0.5 text-[10px] transition-colors border ${
                   isSelected
-                    ? 'bg-indigo-500/25 text-indigo-200 border-indigo-400/50 font-medium'
-                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                    ? 'bg-indigo-600 text-white shadow-xs dark:bg-indigo-500/25 dark:text-indigo-200 dark:border-indigo-400/50 font-medium'
+                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 {preset.label}
@@ -323,7 +323,7 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
             onSaveSettings({ customPromptDirective: e.target.value })
           }
           placeholder="e.g. Group by project urgency, cluster shopping tabs by gift recipient, or strictly separate personal research from dev tickets..."
-          className="w-full rounded-lg border border-slate-700 bg-slate-900 p-2 text-[11px] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
+          className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-[11px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
         />
 
         {/* Save current directive as reusable preset */}
@@ -333,13 +333,13 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
             value={newPresetLabel}
             onChange={(e) => setNewPresetLabel(e.target.value)}
             placeholder="Save directive as preset (e.g. Sprint Triage)..."
-            className="flex-1 rounded-lg border border-slate-800 bg-slate-900/90 px-2 py-1 text-[10px] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+            className="flex-1 rounded-lg border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-2 py-1 text-[10px] text-slate-900 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
           />
           <button
             type="button"
             onClick={handleSavePreset}
             disabled={!newPresetLabel.trim()}
-            className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/15 hover:bg-indigo-500/25 disabled:opacity-40 text-indigo-200 px-2 py-1 text-[10px] font-medium transition-colors"
+            className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 disabled:opacity-40 text-indigo-700 dark:text-indigo-200 px-2 py-1 text-[10px] font-semibold transition-colors"
           >
             <BookmarkPlus className="w-3 h-3" />
             <span>Save Preset</span>

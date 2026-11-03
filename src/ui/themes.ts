@@ -126,6 +126,12 @@ export function applyPrismTheme(themeId: PrismThemeId = 'prism-deep'): void {
   root.style.setProperty('--prism-border', def.colors.border);
   root.style.setProperty('--prism-accent', def.colors.accent);
 
+  // Directly set inline background color on both root and body to avoid subpixel canvas bleed
+  root.style.backgroundColor = def.colors.bg;
+  if (document.body) {
+    document.body.style.backgroundColor = def.colors.bg;
+  }
+
   if (def.mode === 'light') {
     root.classList.remove('dark');
     root.classList.add('light');
