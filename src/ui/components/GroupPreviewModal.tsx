@@ -84,7 +84,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
   }
 
   return (
-    <div className="space-y-1.5 max-h-[195px] overflow-y-auto pr-0.5 animate-fade-in">
+    <div className="space-y-1.5 animate-fade-in">
       {plan.groups.map((group) => {
         const colorStyle =
           CHROME_COLOR_STYLES[group.color] ?? CHROME_COLOR_STYLES.grey;
@@ -166,8 +166,7 @@ export const GroupPreviewList: React.FC<GroupPreviewListProps> = ({
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${colorStyle.bgClass} ${colorStyle.textClass}`}
                 >
-                  {group.tabIds.length}
-                </span>
+                  {group.tabIds.length}</span>
 
                 <button
                   type="button"

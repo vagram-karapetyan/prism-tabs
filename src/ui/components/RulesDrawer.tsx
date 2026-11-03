@@ -136,7 +136,7 @@ export const RulesDrawer: React.FC<RulesDrawerProps> = ({
       </div>
 
       {/* Existing Custom & Preset Rules */}
-      <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+      <div className="space-y-1.5">
         {rules.map((rule) => {
           const cStyle = CHROME_COLOR_STYLES[rule.color] ?? CHROME_COLOR_STYLES.grey;
           return (

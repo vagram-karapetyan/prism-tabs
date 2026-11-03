@@ -670,7 +670,7 @@ export const App: React.FC = () => {
           </button>
 
           {/* Clean Group List (Single non-duplicated view) */}
-          <main className="flex-1 min-h-0 overflow-y-auto">
+          <main className="flex-1 min-h-0 overflow-y-auto pr-0.5">
             <GroupPreviewList
               plan={plan}
               tabsById={tabsById}
