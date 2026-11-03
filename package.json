@@ -3,7 +3,7 @@
   "version": "1.1.1",
   "description": "Prism — A fast, privacy-first, open-source Chrome extension that eliminates tab overload through a Dual-Engine (Deterministic Logic + Multi-Provider BYOK AI) grouping system.",
   "private": false,
-  "license": "MIT",
+  "license": "GPL-3.0",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",

@@ -1,8 +1,10 @@
 # 🌈 Prism — Dual-Engine Tab Organizer for Chrome
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-indigo.svg)](./LICENSE)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](./LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-emerald.svg)](./public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](./tsconfig.json)
+[![Tests](https://img.shields.io/badge/Tests-28%2F28%20passing-brightgreen.svg)](./tests)
+[![AI Engine](https://img.shields.io/badge/AI-Groq%20%7C%20Gemini%20%7C%20BYOK-orange.svg)](#3-configuring-ai-providers-optional--meaning-mode)
 
 **Prism** is a fast, privacy-first, open-source Google Chrome extension that eliminates tab overload through a **Dual-Engine Grouping Architecture**:
 
@@ -66,15 +68,15 @@ prism-tabs/
 │   │   └── chromeTabsService.ts    # Active-window chrome.tabs / chrome.tabGroups & Undo manager
 │   ├── storage/
 │   │   └── storageService.ts       # Typed chrome.storage.local persistence layer
-│   └── ui/
-│       ├── App.tsx                 # Main One-Click Popup UI & unified settings sheet
-│       ├── colorPalette.ts         # Native Chrome Tab Group color tokens
-│       ├── styles.css              # Tailwind CSS + Prism spectral keyframe animations
-│       └── components/
-│           ├── PrismRefractionBar.tsx
-│           ├── GroupPreviewModal.tsx
-│           ├── RulesDrawer.tsx
-│           └── SemanticSettingsDrawer.tsx
+│   ├── ui/
+│   │   ├── App.tsx                 # Main One-Click Popup UI & unified settings sheet
+│   │   ├── colorPalette.ts         # Native Chrome Tab Group color tokens
+│   │   ├── styles.css              # Tailwind CSS + Prism spectral keyframe animations
+│   │   └── components/
+│   │       ├── PrismRefractionBar.tsx
+│   │       ├── GroupPreviewModal.tsx
+│   │       ├── RulesDrawer.tsx
+│   │       └── SemanticSettingsDrawer.tsx
 └── tests/
     ├── deterministic.test.ts       # Unit tests for 7-stage deterministic engine & smart merging
     └── semantic.test.ts            # Unit tests for privacy sanitization, Groq/Gemini & fallback
@@ -91,7 +93,7 @@ prism-tabs/
 ### 1. Clone & Build
 
 ```bash
-git clone https://github.com/your-username/prism-tabs.git
+git clone https://github.com/vagram-karapetyan/prism-tabs.git
 cd prism-tabs
 npm install
 npm run build
@@ -141,6 +143,17 @@ npm run dev
 
 ---
 
+## 🏷️ Topics & Tags
+
+| Category | Topics / Tags |
+| :--- | :--- |
+| **Domain** | `chrome-extension` `tab-manager` `tab-groups` `tabs-organizer` `productivity` |
+| **Intelligence** | `groq` `gemini` `byok` `ai` `llm` `semantic-clustering` |
+| **Tech Stack** | `typescript` `vite` `tailwind-css` `manifest-v3` `react` |
+| **Principles** | `privacy-first` `zero-telemetry` `local-first` `gpl-v3` `open-source` |
+
+---
+
 ## 📄 License
 
-Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for full details.
+Distributed under the **GNU General Public License v3.0 (GPL-3.0)**. See [`LICENSE`](./LICENSE) for full details.
