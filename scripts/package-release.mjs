@@ -92,3 +92,4 @@ console.log(`🔒 Security:       Clean BYOK (Zero Hardcoded Secrets)`);
 console.log(`📁 Unpacked Folder: releases/prism-tabs-v${version}/`);
 console.log(`🗜️ ZIP Archive:    releases/prism-tabs-v${version}.zip (${zipSizeKb} KB)`);
 console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+
