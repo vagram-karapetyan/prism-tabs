@@ -19,11 +19,11 @@ import {
 import {
   applyGroupingPlan,
   captureUndoSnapshot,
-  closeEmptyTabsInWindow,
+  closeDisposableTabsInWindow,
   getCurrentWindowTabGroups,
   getCurrentWindowTabs,
   hasUngroupedGroupableWebTabs,
-  isEmptyBrowserTab,
+  isDisposableTab,
   restoreUndoSnapshot,
   ungroupAllTabsInWindow,
   ungroupSpecificTabs,
@@ -138,9 +138,15 @@ export const App: React.FC = () => {
       currentSettings: PrismSettings,
       currentExistingGroups: ExistingTabGroup[]
     ): GroupingPlan => {
+      const cleanupOpts = {
+        closeEmptyTabs: currentSettings.closeEmptyTabs !== false,
+        closeYouTubeHomeTabs: Boolean(currentSettings.closeYouTubeHomeTabs),
+      };
+      const filteredTabs = windowTabs.filter((t) => !isDisposableTab(t, cleanupOpts));
       const hasUngrouped = hasUngroupedGroupableWebTabs(
         windowTabs,
-        currentExistingGroups
+        currentExistingGroups,
+        cleanupOpts
       );
       const effectiveExisting =
         currentSettings.deterministicOptions.preserveExistingGroups &&
@@ -149,7 +155,7 @@ export const App: React.FC = () => {
           : [];
 
       return runDeterministicGrouping(
-        windowTabs,
+        filteredTabs,
         currentSettings.customRules,
         currentSettings.deterministicOptions,
         effectiveExisting
@@ -229,10 +235,10 @@ export const App: React.FC = () => {
    * One-Click Instant Sort & Group in the active Chrome window (`Alt+P` or main "Prism Tabs" button).
    *
    * IMPORTANT ORDER OF OPERATIONS:
-   * 1. Exclude empty ("New Tab") tabs in memory and run grouping + `applyGroupingPlan` FIRST.
-   *    (If `chrome.tabs.remove` were called BEFORE grouping while an empty "New Tab" is the active tab,
+   * 1. Exclude disposable tabs (empty New Tabs / YouTube homepage) in memory and run grouping + `applyGroupingPlan` FIRST.
+   *    (If `chrome.tabs.remove` were called BEFORE grouping while a disposable tab is active,
    *    Chrome would immediately close the extension popup and abort the JS context before grouping runs!)
-   * 2. Close all empty ("New Tab") tabs AFTER `applyGroupingPlan` has finished grouping all web tabs.
+   * 2. Close all disposable tabs AFTER `applyGroupingPlan` has finished grouping all web tabs.
    */
   const handlePrismSort = useCallback(async () => {
     setIsSorting(true);
@@ -244,22 +250,24 @@ export const App: React.FC = () => {
       setSettings(latestSettings);
 
       const allWindowTabs = await getCurrentWindowTabs();
-      const shouldCloseEmpty = latestSettings.closeEmptyTabs !== false;
-      const nonEmptyTabs = shouldCloseEmpty
-        ? allWindowTabs.filter((t) => !isEmptyBrowserTab(t))
-        : allWindowTabs;
+      const cleanupOpts = {
+        closeEmptyTabs: latestSettings.closeEmptyTabs !== false,
+        closeYouTubeHomeTabs: Boolean(latestSettings.closeYouTubeHomeTabs),
+      };
+      const filteredTabs = allWindowTabs.filter((t) => !isDisposableTab(t, cleanupOpts));
 
-      const currentExistingGroups = await getCurrentWindowTabGroups(nonEmptyTabs);
-      setTabs(nonEmptyTabs);
+      const currentExistingGroups = await getCurrentWindowTabGroups(filteredTabs);
+      setTabs(filteredTabs);
       setExistingGroups(currentExistingGroups);
 
       // Check if there are any ungrouped web tabs outside existing groups.
-      // Excludes pinned tabs, empty New Tabs, and internal browser tabs (e.g. chrome://extensions).
+      // Excludes pinned tabs, empty New Tabs, YouTube home tabs, and internal browser tabs (e.g. chrome://extensions).
       // If 100% of real web tabs are already in groups, re-cluster all web tabs from scratch
       // when the user explicitly clicks "Prism Tabs".
       const hasUngroupedWebTabs = hasUngroupedGroupableWebTabs(
-        nonEmptyTabs,
-        currentExistingGroups
+        allWindowTabs,
+        currentExistingGroups,
+        cleanupOpts
       );
 
       const effectiveExisting =
@@ -273,7 +281,7 @@ export const App: React.FC = () => {
       let computedPlan: GroupingPlan;
       if (latestSettings.mode === 'meaning') {
         computedPlan = await runSemanticGrouping({
-          tabs: nonEmptyTabs,
+          tabs: filteredTabs,
           provider: activeProvider.provider,
           apiKey: activeProvider.apiKey,
           model: activeProvider.model,
@@ -286,7 +294,7 @@ export const App: React.FC = () => {
         });
       } else {
         computedPlan = runDeterministicGrouping(
-          nonEmptyTabs,
+          filteredTabs,
           latestSettings.customRules,
           latestSettings.deterministicOptions,
           effectiveExisting
@@ -311,10 +319,10 @@ export const App: React.FC = () => {
         });
       }
 
-      // Now that all Chrome Tab Groups are created and applied, close empty New Tabs
-      let closedEmptyCount = 0;
-      if (shouldCloseEmpty) {
-        closedEmptyCount = await closeEmptyTabsInWindow();
+      // Now that all Chrome Tab Groups are created and applied, close disposable tabs
+      let closedCount = 0;
+      if (cleanupOpts.closeEmptyTabs || cleanupOpts.closeYouTubeHomeTabs) {
+        closedCount = await closeDisposableTabsInWindow(cleanupOpts);
       }
 
       const refreshedTabs = await getCurrentWindowTabs();
@@ -323,10 +331,10 @@ export const App: React.FC = () => {
       setExistingGroups(refreshedGroups);
       setPlan({ ...computedPlan, groups: [...computedPlan.groups] });
 
-      if (closedEmptyCount > 0) {
+      if (closedCount > 0) {
         showToast(
-          `Closed ${closedEmptyCount} empty ${
-            closedEmptyCount === 1 ? 'tab' : 'tabs'
+          `Closed ${closedCount} leftover ${
+            closedCount === 1 ? 'tab' : 'tabs'
           } & grouped ${computedPlan.groups.length} clusters`
         );
       }
@@ -527,7 +535,7 @@ export const App: React.FC = () => {
       {/* Main Content: Either Unified Settings Sheet OR One-Click Prism Interface */}
       {isSettingsOpen ? (
         <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 animate-fade-in">
-          {/* Quick Behavior Toggles (Close Empty Tabs, Preserve Existing Groups & Auto-Collapse) */}
+          {/* Quick Behavior Toggles (Close Empty Tabs, Close YouTube Home, Preserve Existing Groups & Auto-Collapse) */}
           <div className="rounded-xl border border-slate-800 bg-prism-surface/95 p-2.5 space-y-2 text-[11px]">
             <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-200">
               <span>Close empty &ldquo;New Tab&rdquo; tabs</span>
@@ -537,6 +545,25 @@ export const App: React.FC = () => {
                 onChange={(e) =>
                   handleUpdateSettings({
                     closeEmptyTabs: e.target.checked,
+                  })
+                }
+                className="rounded accent-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-200 border-t border-slate-800/70 pt-1.5">
+              <span className="flex items-center gap-1.5">
+                <span>Close YouTube homepage tabs</span>
+                <span className="text-[9px] font-mono text-slate-400 bg-slate-900 px-1 py-0.5 rounded border border-slate-800">
+                  youtube.com/
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={Boolean(settings.closeYouTubeHomeTabs)}
+                onChange={(e) =>
+                  handleUpdateSettings({
+                    closeYouTubeHomeTabs: e.target.checked,
                   })
                 }
                 className="rounded accent-emerald-500"

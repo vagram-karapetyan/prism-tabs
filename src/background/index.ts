@@ -3,11 +3,11 @@ import { runSemanticGrouping } from '../engine/semantic';
 import {
   applyGroupingPlan,
   captureUndoSnapshot,
-  closeEmptyTabsInWindow,
+  closeDisposableTabsInWindow,
   getCurrentWindowTabGroups,
   getCurrentWindowTabs,
   hasUngroupedGroupableWebTabs,
-  isEmptyBrowserTab,
+  isDisposableTab,
   ungroupAllTabsInWindow,
 } from '../services/chromeTabsService';
 import { geminiClient } from '../services/geminiService';
@@ -30,16 +30,22 @@ async function executeQuickPrismSort(): Promise<void> {
 
   if (allWindowTabs.length === 0) return;
 
-  const shouldCloseEmpty = settings.closeEmptyTabs !== false;
-  const tabs = shouldCloseEmpty
-    ? allWindowTabs.filter((t) => !isEmptyBrowserTab(t))
+  const cleanupOptions = {
+    closeEmptyTabs: settings.closeEmptyTabs !== false,
+    closeYouTubeHomeTabs: Boolean(settings.closeYouTubeHomeTabs),
+  };
+  const shouldCleanup = cleanupOptions.closeEmptyTabs || cleanupOptions.closeYouTubeHomeTabs;
+
+  const tabs = shouldCleanup
+    ? allWindowTabs.filter((t) => !isDisposableTab(t, cleanupOptions))
     : allWindowTabs;
 
   if (tabs.length > 0) {
     const currentExistingGroups = await getCurrentWindowTabGroups(tabs);
     const hasUngrouped = hasUngroupedGroupableWebTabs(
       tabs,
-      currentExistingGroups
+      currentExistingGroups,
+      cleanupOptions
     );
     const existingGroups =
       settings.deterministicOptions.preserveExistingGroups && hasUngrouped
@@ -78,8 +84,8 @@ async function executeQuickPrismSort(): Promise<void> {
     });
   }
 
-  if (shouldCloseEmpty) {
-    await closeEmptyTabsInWindow();
+  if (shouldCleanup) {
+    await closeDisposableTabsInWindow(cleanupOptions);
   }
 }
 

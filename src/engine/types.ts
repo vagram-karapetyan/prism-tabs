@@ -170,6 +170,8 @@ export interface PrismSettings {
   collapseOthersOnGroup: boolean;
   /** Automatically close blank/New Tab pages in the current window after grouping (default: true) */
   closeEmptyTabs: boolean;
+  /** Automatically close unpinned YouTube homepage tabs (https://www.youtube.com/) during grouping */
+  closeYouTubeHomeTabs: boolean;
   deterministicOptions: DeterministicOptions;
   customRules: DeterministicRule[];
 }

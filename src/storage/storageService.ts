@@ -3,10 +3,7 @@ import {
   DEFAULT_DETERMINISTIC_RULES,
 } from '../engine/deterministic';
 import { DEFAULT_PROMPT_PRESETS } from '../engine/semantic';
-import { AiProvider, PrismSettings, UndoSnapshot } from '../engine/types';
-
-const SETTINGS_STORAGE_KEY = 'prism_settings_v1';
-const UNDO_STORAGE_KEY = 'prism_last_undo_v1';
+import { AiProvider, PrismSettings } from '../engine/types';
 
 /**
  * Reads `VITE_GROQ_API_KEY` from `.env.local` if available during build/dev initialization.
@@ -35,6 +32,7 @@ export const DEFAULT_PRISM_SETTINGS: PrismSettings = {
   promptPresets: DEFAULT_PROMPT_PRESETS,
   collapseOthersOnGroup: true,
   closeEmptyTabs: true,
+  closeYouTubeHomeTabs: false,
   deterministicOptions: DEFAULT_DETERMINISTIC_OPTIONS,
   customRules: DEFAULT_DETERMINISTIC_RULES,
 };
@@ -48,11 +46,11 @@ export function getActiveProviderConfig(settings: PrismSettings): {
   model: string;
   baseUrl?: string;
 } {
+  const envKey = getEnvGroqApiKey();
   if (settings.aiProvider === 'groq') {
-    const groqKey = settings.groqApiKey?.trim() || getEnvGroqApiKey();
     return {
       provider: 'groq',
-      apiKey: groqKey,
+      apiKey: settings.groqApiKey?.trim() || envKey,
       model: settings.groqModel || 'llama-3.3-70b-versatile',
     };
   }
@@ -71,9 +69,13 @@ export function getActiveProviderConfig(settings: PrismSettings): {
   };
 }
 
-const memoryFallbackStore = new Map<string, unknown>();
+const SETTINGS_STORAGE_KEY = 'prism_settings_v1';
+const UNDO_SNAPSHOT_STORAGE_KEY = 'prism_last_undo_v1';
 
-function hasChromeStorage(): boolean {
+// In-memory fallback for tests or environments where chrome.storage is unavailable
+const memoryFallback = new Map<string, unknown>();
+
+function isStorageAvailable(): boolean {
   return (
     typeof chrome !== 'undefined' &&
     typeof chrome.storage !== 'undefined' &&
@@ -82,24 +84,24 @@ function hasChromeStorage(): boolean {
 }
 
 async function rawGet<T>(key: string): Promise<T | undefined> {
-  if (hasChromeStorage()) {
-    const result = await chrome.storage.local.get(key);
-    return result[key] as T | undefined;
+  if (isStorageAvailable()) {
+    const res = await chrome.storage.local.get(key);
+    return res[key] as T | undefined;
   }
   if (typeof localStorage !== 'undefined') {
-    const raw = localStorage.getItem(key);
-    if (!raw) return undefined;
+    const val = localStorage.getItem(key);
+    if (!val) return undefined;
     try {
-      return JSON.parse(raw) as T;
+      return JSON.parse(val) as T;
     } catch {
       return undefined;
     }
   }
-  return memoryFallbackStore.get(key) as T | undefined;
+  return memoryFallback.get(key) as T | undefined;
 }
 
 async function rawSet<T>(key: string, value: T): Promise<void> {
-  if (hasChromeStorage()) {
+  if (isStorageAvailable()) {
     await chrome.storage.local.set({ [key]: value });
     return;
   }
@@ -107,11 +109,11 @@ async function rawSet<T>(key: string, value: T): Promise<void> {
     localStorage.setItem(key, JSON.stringify(value));
     return;
   }
-  memoryFallbackStore.set(key, value);
+  memoryFallback.set(key, value);
 }
 
 async function rawRemove(key: string): Promise<void> {
-  if (hasChromeStorage()) {
+  if (isStorageAvailable()) {
     await chrome.storage.local.remove(key);
     return;
   }
@@ -119,7 +121,7 @@ async function rawRemove(key: string): Promise<void> {
     localStorage.removeItem(key);
     return;
   }
-  memoryFallbackStore.delete(key);
+  memoryFallback.delete(key);
 }
 
 export async function loadSettings(): Promise<PrismSettings> {
@@ -142,6 +144,7 @@ export async function loadSettings(): Promise<PrismSettings> {
     ...stored,
     groqApiKey: resolvedGroqKey,
     closeEmptyTabs: stored.closeEmptyTabs ?? true,
+    closeYouTubeHomeTabs: stored.closeYouTubeHomeTabs ?? false,
     deterministicOptions: {
       ...DEFAULT_DETERMINISTIC_OPTIONS,
       ...(stored.deterministicOptions ?? {}),
@@ -168,7 +171,7 @@ export async function saveSettings(
   updates: Partial<PrismSettings>
 ): Promise<PrismSettings> {
   const current = await loadSettings();
-  const merged: PrismSettings = {
+  const next: PrismSettings = {
     ...current,
     ...updates,
     deterministicOptions: {
@@ -176,19 +179,23 @@ export async function saveSettings(
       ...(updates.deterministicOptions ?? {}),
     },
   };
-  await rawSet(SETTINGS_STORAGE_KEY, merged);
-  return merged;
+  await rawSet(SETTINGS_STORAGE_KEY, next);
+  return next;
 }
 
-export async function loadLastUndoSnapshot(): Promise<UndoSnapshot | null> {
-  const snapshot = await rawGet<UndoSnapshot>(UNDO_STORAGE_KEY);
+export async function loadLastUndoSnapshot(): Promise<import('../engine/types').UndoSnapshot | null> {
+  const snapshot = await rawGet<import('../engine/types').UndoSnapshot>(
+    UNDO_SNAPSHOT_STORAGE_KEY
+  );
   return snapshot ?? null;
 }
 
-export async function saveLastUndoSnapshot(snapshot: UndoSnapshot): Promise<void> {
-  await rawSet(UNDO_STORAGE_KEY, snapshot);
+export async function saveLastUndoSnapshot(
+  snapshot: import('../engine/types').UndoSnapshot
+): Promise<void> {
+  await rawSet(UNDO_SNAPSHOT_STORAGE_KEY, snapshot);
 }
 
 export async function clearLastUndoSnapshot(): Promise<void> {
-  await rawRemove(UNDO_STORAGE_KEY);
+  await rawRemove(UNDO_SNAPSHOT_STORAGE_KEY);
 }
