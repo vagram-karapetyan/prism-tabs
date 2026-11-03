@@ -144,16 +144,18 @@ export const RulesDrawer: React.FC<RulesDrawerProps> = ({
               key={rule.id}
               className="flex items-center justify-between gap-2 rounded-lg border border-slate-800/90 bg-slate-900/60 px-2.5 py-1.5 text-[11px]"
             >
-              <button
-                type="button"
+              <div
                 onClick={() => handleToggleRule(rule.id)}
-                className="flex items-center gap-2 min-w-0 flex-1 text-left"
+                className="flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer select-none"
               >
                 <input
                   type="checkbox"
                   checked={rule.enabled}
-                  onChange={() => {}}
-                  className="rounded accent-emerald-500"
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleToggleRule(rule.id);
+                  }}
+                  className="rounded accent-emerald-500 cursor-pointer"
                 />
                 <span>{rule.emoji}</span>
                 <span
@@ -168,7 +170,7 @@ export const RulesDrawer: React.FC<RulesDrawerProps> = ({
                 >
                   {rule.isRegex ? 'Regex' : rule.matchTarget}
                 </span>
-              </button>
+              </div>
               <button
                 type="button"
                 onClick={() => handleDeleteRule(rule.id)}

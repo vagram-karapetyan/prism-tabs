@@ -455,6 +455,9 @@ export const App: React.FC = () => {
       if (e.altKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         void handlePrismSort();
+      } else if (e.altKey && e.key.toLowerCase() === 'u') {
+        e.preventDefault();
+        void handleUngroupAll();
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         const tag = (e.target as HTMLElement | null)?.tagName;
         if (tag !== 'INPUT' && tag !== 'TEXTAREA' && undoSnapshot) {
@@ -465,7 +468,7 @@ export const App: React.FC = () => {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handlePrismSort, handleUndo, undoSnapshot]);
+  }, [handlePrismSort, handleUngroupAll, handleUndo, undoSnapshot]);
 
   const providerLabel =
     settings.aiProvider === 'groq'

@@ -41,12 +41,12 @@ async function parseApiErrorDetails(response: Response): Promise<{
     const data = (await response.json()) as {
       error?: {
         message?: string;
-        code?: string;
+        code?: string | number;
       };
     };
     return {
       detailMessage: data?.error?.message,
-      errorCode: data?.error?.code,
+      errorCode: data?.error?.code !== undefined ? String(data.error.code) : undefined,
     };
   } catch {
     return {};
@@ -312,11 +312,17 @@ export const geminiClient: SemanticCompletionClient = {
       });
 
       if (!response.ok) {
+        const { detailMessage, errorCode } = await parseApiErrorDetails(response);
+        const shortDetail = detailMessage
+          ? `: ${detailMessage.split('.')[0]}`
+          : '';
+
         if (response.status === 429) {
           throw new GeminiApiError(
-            'Gemini API rate limit exceeded (HTTP 429)',
+            `Gemini API rate limit exceeded (HTTP 429)${shortDetail}`,
             429,
-            true
+            true,
+            errorCode
           );
         }
         if (
@@ -325,15 +331,17 @@ export const geminiClient: SemanticCompletionClient = {
           response.status === 403
         ) {
           throw new GeminiApiError(
-            `Gemini API authentication or request error (HTTP ${response.status})`,
+            `Gemini API authentication or request error (HTTP ${response.status})${shortDetail}`,
             response.status,
-            false
+            false,
+            errorCode
           );
         }
         throw new GeminiApiError(
-          `Gemini API returned HTTP ${response.status}`,
+          `Gemini API returned HTTP ${response.status}${shortDetail}`,
           response.status,
-          false
+          false,
+          errorCode
         );
       }
 

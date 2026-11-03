@@ -36,6 +36,7 @@ describe('Disposable Tab Detection & Cleanup', () => {
       expect(isYouTubeHomeTab({ url: 'https://www.youtube.com/feed/subscriptions' })).toBe(false);
       expect(isYouTubeHomeTab({ url: 'https://studio.youtube.com/' })).toBe(false);
       expect(isYouTubeHomeTab({ url: 'https://music.youtube.com/' })).toBe(false);
+      expect(isYouTubeHomeTab({ url: 'https://www.youtube.com/?search_query=antigravity' })).toBe(false);
     });
 
     it('never matches pinned tabs even if URL is YouTube homepage', () => {

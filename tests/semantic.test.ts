@@ -238,4 +238,26 @@ describe('Semantic Engine — Multi-Provider Execution & Graceful Fallback', () 
     expect(plan.modeUsed).toBe('logic');
     expect(plan.groups[0].tabIds).toEqual([1, 2]);
   });
+
+  it('includes detailed provider error message in fallbackReason when Gemini API fails', async () => {
+    const failingGeminiClient: SemanticCompletionClient = {
+      generateGroups: vi
+        .fn()
+        .mockRejectedValue(
+          new Error('Gemini API authentication or request error (HTTP 400): API key not valid')
+        ),
+    };
+
+    const plan = await runSemanticGrouping({
+      tabs,
+      provider: 'gemini',
+      apiKey: 'invalid_gemini_key',
+      model: 'gemini-2.5-flash',
+      client: failingGeminiClient,
+    });
+
+    expect(plan.fallbackTriggered).toBe(true);
+    expect(plan.fallbackReason).toContain('API key not valid');
+    expect(plan.modeUsed).toBe('logic');
+  });
 });

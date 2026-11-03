@@ -89,6 +89,9 @@ const SEARCH_ENGINE_ROOT_DOMAINS = new Set([
   'duckduckgo.com',
   'ecosia.org',
   'perplexity.ai',
+  'kagi.com',
+  'qwant.com',
+  'search.brave.com',
 ]);
 
 /**
@@ -105,7 +108,9 @@ const MEDIA_AND_AUDIO_DOMAINS = new Set([
   'vimeo.com',
   'netflix.com',
   'podcasts.apple.com',
+  'music.apple.com',
   'deezer.com',
+  'music.yandex.ru',
   'bandcamp.com',
   'tidal.com',
 ]);
@@ -543,7 +548,9 @@ export function extractPlatformCluster(
 
   // 1. Search Engines -> unified `Research & Search` cluster
   const isGoogleSearch =
-    (rootDomain === 'google.com' || hostname.startsWith('google.')) &&
+    (rootDomain === 'google.com' ||
+      rootDomain.startsWith('google.') ||
+      hostname.startsWith('google.')) &&
     (pathSegments[0]?.toLowerCase() === 'search' ||
       domainInfo.pathname.startsWith('/search'));
 
@@ -551,11 +558,20 @@ export function extractPlatformCluster(
     rootDomain === 'bing.com' &&
     (pathSegments.length === 0 || pathSegments[0]?.toLowerCase() === 'search');
 
+  const isYandexSearch =
+    (rootDomain === 'yandex.ru' ||
+      rootDomain === 'yandex.com' ||
+      rootDomain === 'ya.ru') &&
+    (hostname === 'ya.ru' ||
+      ((hostname === 'yandex.ru' || hostname === 'yandex.com') &&
+        (pathSegments[0]?.toLowerCase() === 'search' ||
+          domainInfo.pathname.startsWith('/search'))));
+
   const isDedicatedSearchEngine =
     SEARCH_ENGINE_ROOT_DOMAINS.has(rootDomain) ||
     SEARCH_ENGINE_ROOT_DOMAINS.has(hostname);
 
-  if (isGoogleSearch || isBingSearch || isDedicatedSearchEngine) {
+  if (isGoogleSearch || isBingSearch || isYandexSearch || isDedicatedSearchEngine) {
     return {
       bucketKey: 'platform:search:research-and-search',
       groupName: 'Research & Search',
@@ -1656,8 +1672,10 @@ export function runDeterministicGrouping(
       .find(Boolean);
 
     if (matchingExistingGroup) {
-      matchingExistingGroup.tabIds.push(tabId);
-      if (matchingExistingGroup.addedTabIds) {
+      if (!matchingExistingGroup.tabIds.includes(tabId)) {
+        matchingExistingGroup.tabIds.push(tabId);
+      }
+      if (matchingExistingGroup.addedTabIds && !matchingExistingGroup.addedTabIds.includes(tabId)) {
         matchingExistingGroup.addedTabIds.push(tabId);
       }
       tabToGroupMap.set(tabId, matchingExistingGroup);
@@ -1726,8 +1744,10 @@ export function runDeterministicGrouping(
       tabToGroupMap
     );
     if (ancestorGroup) {
-      ancestorGroup.tabIds.push(tabId);
-      if (ancestorGroup.addedTabIds) {
+      if (!ancestorGroup.tabIds.includes(tabId)) {
+        ancestorGroup.tabIds.push(tabId);
+      }
+      if (ancestorGroup.addedTabIds && !ancestorGroup.addedTabIds.includes(tabId)) {
         ancestorGroup.addedTabIds.push(tabId);
       }
       tabToGroupMap.set(tabId, ancestorGroup);

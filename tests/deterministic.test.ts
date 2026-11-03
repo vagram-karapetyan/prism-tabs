@@ -148,6 +148,45 @@ describe('Deterministic Engine — Platform-Aware Path Parsing & Media Cluster',
     expect(mediaGroup?.emoji).toBe('🎧');
     expect(mediaGroup?.tabIds).toEqual([10, 11, 12]);
   });
+
+  it('unifies Apple Music and Yandex Music into 🎧 Media & Audio', () => {
+    const appleCluster = extractPlatformCluster(
+      extractDomainInfo('https://music.apple.com/us/album/test/12345')
+    );
+    const yandexCluster = extractPlatformCluster(
+      extractDomainInfo('https://music.yandex.ru/artist/12345')
+    );
+    expect(appleCluster?.groupName).toBe('Media & Audio');
+    expect(yandexCluster?.groupName).toBe('Media & Audio');
+  });
+
+  it('recognizes international Google search domains and alternative search engines as 🔍 Research & Search', () => {
+    const googleDe = extractPlatformCluster(
+      extractDomainInfo('https://www.google.de/search?q=typescript')
+    );
+    const googleUk = extractPlatformCluster(
+      extractDomainInfo('https://www.google.co.uk/search?q=vitest')
+    );
+    const googleRu = extractPlatformCluster(
+      extractDomainInfo('https://www.google.ru/search?q=react')
+    );
+    const yandex = extractPlatformCluster(
+      extractDomainInfo('https://ya.ru/search/?text=prism')
+    );
+    const brave = extractPlatformCluster(
+      extractDomainInfo('https://search.brave.com/search?q=chrome+extensions')
+    );
+    const perplexity = extractPlatformCluster(
+      extractDomainInfo('https://www.perplexity.ai/search/test')
+    );
+
+    expect(googleDe?.groupName).toBe('Research & Search');
+    expect(googleUk?.groupName).toBe('Research & Search');
+    expect(googleRu?.groupName).toBe('Research & Search');
+    expect(yandex?.groupName).toBe('Research & Search');
+    expect(brave?.groupName).toBe('Research & Search');
+    expect(perplexity?.groupName).toBe('Research & Search');
+  });
 });
 
 describe('Deterministic Engine — Contextual Research Chains & Magical Heuristics', () => {

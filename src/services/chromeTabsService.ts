@@ -53,7 +53,12 @@ export function isYouTubeHomeTab(tab: {
     }
     const path = parsed.pathname.replace(/\/+$/, '') || '/';
     // Matches root '/' or '/feed/trending' etc. if bare, but specifically root homepage
-    return path === '/' && !parsed.searchParams.has('v') && !parsed.searchParams.has('list');
+    return (
+      path === '/' &&
+      !parsed.searchParams.has('v') &&
+      !parsed.searchParams.has('list') &&
+      !parsed.searchParams.has('search_query')
+    );
   } catch {
     return false;
   }
@@ -667,6 +672,7 @@ export async function applyGroupingPlan(
           chromeGroupId = await chrome.tabs.group({
             tabIds: group.tabIds,
           });
+          group.existingGroupId = chromeGroupId;
         }
 
         const titleWithEmoji = `${group.emoji} ${group.groupName}`.trim();
@@ -687,6 +693,7 @@ export async function applyGroupingPlan(
     } else {
       // Demo state update
       const targetId = typeof group.existingGroupId === 'number' ? group.existingGroupId : i + 10;
+      group.existingGroupId = targetId;
       demoTabState = demoTabState.map((t) =>
         group.tabIds.includes(t.id) ? { ...t, groupId: targetId } : t
       );
