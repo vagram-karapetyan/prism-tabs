@@ -96,15 +96,21 @@ prism-tabs/
    - 7-Stage Logic Mode engine with Jaccard NLP clustering, openerTabId trees, and 60+ domain profiles.
    - Yandex Search vs. Yandex Music differentiation (`music.yandex.ru` -> Media & Audio).
    - Multi-provider AI engine (Groq LPU with multi-model token scaling rotation, Gemini 2.5 Flash, Custom OpenAI endpoints).
+   - Privacy Sanitizer (stripping sensitive params, tokens, and browser-internal URLs before LLM prompts).
    - Non-destructive **Smart Merge**: ungrouped tabs are merged into existing groups without duplicating.
+   - Automatic empty tab cleanup (`New Tab` / `about:blank`).
+   - Optional automatic closing of YouTube homepage tabs (`youtube.com/`) on grouping.
    - Active window isolation: operations operate strictly on `currentWindow: true`.
    - Full 1-click **Undo** (`Ctrl+Z`) and **Ungroup All** (`Alt+U`).
+   - Live inline group editing (rename, color swatch picker, individual cluster dissolution).
 2. **UI & Theming System**:
    - 6 modern color themes (`prism-deep`, `midnight-nebula`, `emerald-forest`, `sunset-amber`, `arctic-frost`, `pure-light`).
-   - Visual theme selector (`ThemeSelector.tsx`) with instant persistence.
+   - Visual theme selector (`ThemeSelector.tsx`) with instant persistence in `chrome.storage.local`.
    - Complete light-mode contrast audit (PRISM gradient, buttons, inputs, badges).
+   - Animated spectral refraction progress bar with optical prism animation.
 3. **Automated Testing & Code Quality**:
    - 55 unit tests passing across 5 suites (`tests/`).
+   - Strict TypeScript (`strict: true`) with zero compilation errors.
    - Clean git history with zero unused artifacts.
 
 ---
@@ -122,6 +128,8 @@ Future agents picking up this project should prioritize the following:
   - Add an inline search bar at the top of the groups preview list to quickly filter tabs in large windows (50+ tabs).
 
 ### Priority 2: Performance & Power Features
+- [ ] **Memory Savings Counter**:
+  - Track and display estimated RAM saved through tab collapse and cleanup.
 - [ ] **Background Tab Memory Discarding (`chrome.tabs.discard`)**:
   - Provide an optional toggle to freeze/suspend inactive grouped tabs to free up RAM on low-spec PCs.
 - [ ] **Scheduled / Tab-Count Auto-Grouping**:
@@ -129,6 +137,8 @@ Future agents picking up this project should prioritize the following:
 - [ ] **Drag-and-Drop Reorganization**:
   - Allow users to drag a tab from one group to another directly inside `GroupPreviewModal.tsx`.
 
-### Priority 3: Store Deployment
+### Priority 3: Store Deployment & Ecosystem
+- [ ] **Microsoft Edge & Brave Support**:
+  - Verify and adapt manifest/packaging for the Microsoft Edge Add-ons store.
 - [ ] **Chrome Web Store Submission**:
   - Generate store promo tiles (440x280, 1400x560), privacy policy markdown document, and multi-language store listings (EN, RU).
