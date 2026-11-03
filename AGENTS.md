@@ -14,7 +14,7 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 - **Framework & UI**: React 18, TypeScript 5.6 (strict mode), Tailwind CSS (`darkMode: 'class'`), Lucide React.
 - **Build Tool**: Vite 5 (`vite build`), generating bundle into `dist/`.
 - **Target Platform**: Google Chrome / Chromium Manifest V3 (`chrome.tabGroups`, `chrome.tabs`, `chrome.storage.local`).
-- **Test Runner**: Vitest (55/55 unit tests passing).
+- **Test Runner**: Vitest (58/58 unit tests passing).
 
 ---
 
@@ -27,7 +27,7 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 > - Dev server (if needed): `cmd.exe /c npm run dev`
 
 ### Verification Workflow for Any Changes
-1. Run unit test suite: `cmd.exe /c npm test` (all 55 tests must pass).
+1. Run unit test suite: `cmd.exe /c npm test` (all 58 tests must pass).
 2. Build extension bundle: `cmd.exe /c npm run build` (always ensure `dist/` is updated and in sync before committing).
 3. Check Git status: `git status`.
 
@@ -53,6 +53,7 @@ prism-tabs/
 │   ├── storage/
 │   │   └── storageService.ts       # Typed persistence layer using chrome.storage.local
 │   └── ui/
+│       ├── main.tsx                # SPA entry point & zero-CSP synchronous theme cache loader
 │       ├── App.tsx                 # Main popup UI & unified settings sheet
 │       ├── themes.ts               # 6 curated modern color themes & applyPrismTheme handler
 │       ├── colorPalette.ts         # Native Chrome Tab Group color styles & light/dark contrast classes
@@ -107,14 +108,20 @@ prism-tabs/
    - Active window isolation: operations operate strictly on `currentWindow: true`.
    - Full 1-click **Undo** (`Ctrl+Z`) and **Ungroup All** (`Alt+U`).
    - Live inline group editing (rename, color swatch picker, individual cluster dissolution).
+   - **Graceful Fallback & Zero-Waste Routing**: when Gemini or custom AI keys are unconfigured, zero network requests are made; extension immediately falls back to offline Logic Mode (<1ms) with an informative amber banner.
+   - **BYOK Key Seeding**: `.env.local` support (`VITE_GROQ_API_KEY`) safely ignored by Git for dev seeding.
 2. **UI & Theming System**:
    - 6 modern color themes (`prism-deep`, `midnight-nebula`, `emerald-forest`, `sunset-amber`, `arctic-frost`, `pure-light`).
+   - Dynamic **System Theme Auto-Detection (`system` mode)** with live listener on OS `prefers-color-scheme` changes.
    - Visual theme selector (`ThemeSelector.tsx`) with instant persistence in `chrome.storage.local`.
+   - Exact integer DPI scaling constraints (`392x440px`, multiples of 8) eliminating fractional subpixel borders on Windows 125%/150%.
+   - Full Manifest V3 CSP compliance: zero inline `<script>` tags, synchronous theme bootstrap in `main.tsx`.
    - Complete light-mode contrast audit (PRISM gradient, buttons, inputs, badges).
    - Animated spectral refraction progress bar with optical prism animation.
-3. **Automated Testing & Code Quality**:
+3. **Automated Testing & Documentation**:
    - 58 unit tests passing across 5 suites (`tests/`).
    - Strict TypeScript (`strict: true`) with zero compilation errors.
+   - GitHub Markdown Mermaid diagrams formatted with explicit `<br/>` line wrapping to eliminate text clipping on GitHub.
    - Clean git history with zero unused artifacts.
 
 ---
