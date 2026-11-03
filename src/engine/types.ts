@@ -155,12 +155,15 @@ export interface UndoSnapshot {
 }
 
 export type PrismThemeId =
+  | 'system'
   | 'prism-deep'
   | 'midnight-nebula'
   | 'emerald-forest'
   | 'sunset-amber'
   | 'arctic-frost'
   | 'pure-light';
+
+export type ConcreteThemeId = Exclude<PrismThemeId, 'system'>;
 
 export interface PrismSettings {
   /** Visual theme for the popup interface (default: 'prism-deep') */

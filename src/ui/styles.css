@@ -83,11 +83,8 @@
   }
 
   html {
-    width: 390px !important;
-    min-width: 390px !important;
-    max-width: 390px !important;
-    min-height: 360px !important;
-    max-height: 440px !important;
+    width: 392px !important;
+    height: 440px !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
@@ -99,11 +96,8 @@
   }
 
   body {
-    width: 390px !important;
-    min-width: 390px !important;
-    max-width: 390px !important;
-    min-height: 360px !important;
-    max-height: 440px !important;
+    width: 100% !important;
+    height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
@@ -117,8 +111,7 @@
 
   #root {
     width: 100% !important;
-    min-height: 360px !important;
-    max-height: 440px !important;
+    height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     background-color: var(--prism-bg) !important;

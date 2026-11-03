@@ -1,7 +1,7 @@
-import { PrismThemeId } from '../engine/types';
+import { ConcreteThemeId, PrismThemeId } from '../engine/types';
 
 export interface ThemeDefinition {
-  id: PrismThemeId;
+  id: ConcreteThemeId;
   name: string;
   tagline: string;
   mode: 'dark' | 'light';
@@ -16,7 +16,7 @@ export interface ThemeDefinition {
   };
 }
 
-export const PRISM_THEMES: Record<PrismThemeId, ThemeDefinition> = {
+export const PRISM_THEMES: Record<ConcreteThemeId, ThemeDefinition> = {
   'prism-deep': {
     id: 'prism-deep',
     name: 'Prism Deep',
@@ -112,10 +112,30 @@ export const PRISM_THEMES: Record<PrismThemeId, ThemeDefinition> = {
 export const THEME_LIST: ThemeDefinition[] = Object.values(PRISM_THEMES);
 
 /**
+ * Resolves 'system' theme dynamically based on the current window/OS color scheme preference.
+ */
+export function resolveEffectiveThemeId(
+  themeId: PrismThemeId = 'prism-deep'
+): ConcreteThemeId {
+  if (themeId !== 'system') {
+    return themeId in PRISM_THEMES ? (themeId as ConcreteThemeId) : 'prism-deep';
+  }
+
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    const isLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    return isLight ? 'pure-light' : 'prism-deep';
+  }
+
+  return 'prism-deep';
+}
+
+
+/**
  * Applies the selected theme to the root HTML document and updates CSS variables & color-scheme.
  */
 export function applyPrismTheme(themeId: PrismThemeId = 'prism-deep'): void {
-  const def = PRISM_THEMES[themeId] ?? PRISM_THEMES['prism-deep'];
+  const effectiveId = resolveEffectiveThemeId(themeId);
+  const def = PRISM_THEMES[effectiveId] ?? PRISM_THEMES['prism-deep'];
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
@@ -126,10 +146,16 @@ export function applyPrismTheme(themeId: PrismThemeId = 'prism-deep'): void {
   root.style.setProperty('--prism-border', def.colors.border);
   root.style.setProperty('--prism-accent', def.colors.accent);
 
-  // Directly set inline background color on both root and body to avoid subpixel canvas bleed
+  // Directly set inline background color and color-scheme on root, body, and root element
   root.style.backgroundColor = def.colors.bg;
+  root.style.colorScheme = def.mode;
   if (document.body) {
     document.body.style.backgroundColor = def.colors.bg;
+    document.body.style.colorScheme = def.mode;
+  }
+  const rootEl = document.getElementById('root');
+  if (rootEl) {
+    rootEl.style.backgroundColor = def.colors.bg;
   }
 
   if (def.mode === 'light') {
@@ -144,5 +170,17 @@ export function applyPrismTheme(themeId: PrismThemeId = 'prism-deep'): void {
   const meta = document.getElementById('prism-color-scheme') as HTMLMetaElement | null;
   if (meta) {
     meta.content = def.mode;
+  }
+
+  // Cache theme attributes in localStorage for instant synchronous initialization on next popup launch
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('prism_theme_id', themeId);
+      localStorage.setItem('prism_theme_effective', def.id);
+      localStorage.setItem('prism_theme_bg', def.colors.bg);
+      localStorage.setItem('prism_theme_mode', def.mode);
+    }
+  } catch {
+    // Ignore storage errors in restricted contexts
   }
 }

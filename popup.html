@@ -3,34 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark light" id="prism-color-scheme" />
+    <meta name="color-scheme" content="dark" id="prism-color-scheme" />
     <title>Prism — Dual-Engine Tab Organizer</title>
     <style>
-      html, body {
+      :root {
+        color-scheme: dark;
+        --prism-bg: #090A0F;
+      }
+      :root.light, [data-theme='pure-light'] {
+        color-scheme: light;
+        --prism-bg: #F8FAFC;
+      }
+      html {
         margin: 0 !important;
         padding: 0 !important;
-        width: 390px !important;
-        min-width: 390px !important;
-        max-width: 390px !important;
-        min-height: 360px !important;
-        max-height: 440px !important;
+        width: 392px !important;
+        height: 440px !important;
         overflow: hidden !important;
-        background-color: #090A0F;
-        color-scheme: dark light;
+        background-color: var(--prism-bg, #090A0F) !important;
+        color-scheme: dark !important;
         outline: none !important;
         border: none !important;
         box-sizing: border-box !important;
       }
-      #root {
-        width: 100% !important;
-        min-height: 360px !important;
-        max-height: 440px !important;
+      html.light {
+        color-scheme: light !important;
+        background-color: #F8FAFC !important;
+      }
+      body {
         margin: 0 !important;
         padding: 0 !important;
-        background-color: #090A0F;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        background-color: var(--prism-bg, #090A0F) !important;
+        color-scheme: dark !important;
         outline: none !important;
         border: none !important;
         box-sizing: border-box !important;
+      }
+      html.light body {
+        color-scheme: light !important;
+        background-color: #F8FAFC !important;
+      }
+      #root {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background-color: var(--prism-bg, #090A0F) !important;
+        outline: none !important;
+        border: none !important;
+        box-sizing: border-box !important;
+      }
+      html.light #root {
+        background-color: #F8FAFC !important;
       }
     </style>
   </head>

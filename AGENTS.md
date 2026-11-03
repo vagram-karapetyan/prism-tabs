@@ -77,12 +77,16 @@ prism-tabs/
 
 ## 🎨 UI & Popup Sizing Guardrails
 
-1. **Popup Window Dimensions**:
+1. **Popup Window Dimensions & DPI Scaling (125%, 150%, 175%, 200%)**:
    - In Chrome extensions, `popup.html` dictates the initial bubble window dimensions.
-   - `popup.html` and `src/ui/styles.css` use fixed constraints: `width: 390px !important; min-width: 390px; max-width: 390px; min-height: 360px; max-height: 440px; overflow: hidden;`.
-   - Never set `width: 100%; height: 100%` on `html/body` without explicit pixel bounds — Chromium will collapse the popup into a 25x25 dot.
-2. **Native Chromium Frame (`views::BubbleBorder`)**:
-   - Chrome on Windows wraps extension bubbles in a native OS frame. When Chrome is in Light Mode, Chrome paints a light border around any popup. In Dark Mode, it paints a subtle dark border.
+   - `html` has fixed constraints: `width: 392px !important; height: 440px !important; overflow: hidden;`.
+   - **Why 392px and 440px?** Both 392 and 440 are multiples of 8 (`392 = 49*8`, `440 = 55*8`). When Windows Display Scaling is active (e.g. 125%, 150%, 175%), this guarantees exact integer physical pixel dimensions (`392 * 1.25 = 490px`, `440 * 1.25 = 550px`), completely eliminating fractional subpixel rounding gaps and white canvas borders.
+   - `body` and `#root` use `width: 100% !important; height: 100% !important;` so they seamlessly cover any OS view boundaries.
+   - `App.tsx` root container uses `w-full h-full overflow-hidden`.
+2. **Native Chromium Frame (`views::BubbleBorder`) & Color Scheme**:
+   - Chrome on Windows wraps extension bubbles in a native OS frame.
+   - `popup.html` explicitly defaults to `<meta name="color-scheme" content="dark">` and `color-scheme: dark`. This ensures Chromium initializes dark host view backgrounds and dark bubble borders even when Windows is running in Light Mode.
+   - When switching to `pure-light`, `applyPrismTheme` dynamically updates `colorScheme`, `meta.content`, and caches theme attributes in `localStorage` for instant synchronous application on next popup open.
    - All inner elements in `App.tsx` have `rounded-none border-none` on the root container to prevent exposed corners.
 3. **Contrast in Light/Dark Themes**:
    - All text, icons, buttons, and inputs must use dual-mode Tailwind classes (`text-slate-900 dark:text-slate-100`, `bg-white dark:bg-slate-900`, etc.).
@@ -90,7 +94,7 @@ prism-tabs/
 
 ---
 
-## ✅ What Has Been Accomplished (v1.1.2)
+## ✅ What Has Been Accomplished (v1.1.3)
 
 1. **Core Dual-Engine Pipeline**:
    - 7-Stage Logic Mode engine with Jaccard NLP clustering, openerTabId trees, and 60+ domain profiles.
@@ -109,7 +113,7 @@ prism-tabs/
    - Complete light-mode contrast audit (PRISM gradient, buttons, inputs, badges).
    - Animated spectral refraction progress bar with optical prism animation.
 3. **Automated Testing & Code Quality**:
-   - 55 unit tests passing across 5 suites (`tests/`).
+   - 58 unit tests passing across 5 suites (`tests/`).
    - Strict TypeScript (`strict: true`) with zero compilation errors.
    - Clean git history with zero unused artifacts.
 
@@ -120,8 +124,8 @@ prism-tabs/
 Future agents picking up this project should prioritize the following:
 
 ### Priority 1: High Value User Features
-- [ ] **System Theme Auto-Detection (`system` mode)**:
-  - Add an "Auto / Follow System" theme setting that dynamically chooses `pure-light` when `window.matchMedia('(prefers-color-scheme: light)').matches` is true, and `prism-deep` when dark.
+- [x] **System Theme Auto-Detection (`system` mode)**:
+  - Added an "Auto / Follow System" theme setting that dynamically chooses `pure-light` when `window.matchMedia('(prefers-color-scheme: light)').matches` is true, and `prism-deep` when dark, with live listener on OS theme changes.
 - [ ] **Settings & Rules JSON Import / Export**:
   - Add "Export Config" and "Import Config" buttons in settings so users can backup or transfer custom rules and prompt directives.
 - [ ] **Tab Search Filter in Popup**:

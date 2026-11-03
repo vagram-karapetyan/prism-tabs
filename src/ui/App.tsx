@@ -208,6 +208,20 @@ export const App: React.FC = () => {
     };
   }, [computeLogicPlanForWindow]);
 
+  // Dynamically react to OS / browser light/dark mode changes when 'system' theme is selected
+  useEffect(() => {
+    if (settings.theme !== 'system') return;
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+    const handleMediaChange = () => {
+      applyPrismTheme('system');
+    };
+
+    mediaQuery.addEventListener('change', handleMediaChange);
+    return () => mediaQuery.removeEventListener('change', handleMediaChange);
+  }, [settings.theme]);
+
   const handleUpdateSettings = useCallback(
     async (updates: Partial<PrismSettings>) => {
       const next = await saveSettings(updates);
@@ -491,7 +505,7 @@ export const App: React.FC = () => {
       : 'Gemini';
 
   return (
-    <div className="flex flex-col min-h-[360px] max-h-[440px] bg-prism-bg text-slate-900 dark:text-slate-100 p-3 gap-2 select-none">
+    <div className="flex flex-col w-full h-full bg-prism-bg text-slate-900 dark:text-slate-100 p-3 gap-2 select-none overflow-hidden">
       {/* Top Minimal Header Bar */}
       <header className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-2">

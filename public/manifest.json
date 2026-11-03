@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Prism — Dual-Engine Tab Organizer",
   "short_name": "Prism",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Eliminate tab overload with instant deterministic Logic grouping and privacy-first AI semantic clustering (Groq / Gemini / Custom BYOK).",
   "permissions": [
     "tabs",
