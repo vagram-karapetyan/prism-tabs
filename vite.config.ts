@@ -3,17 +3,20 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const isRelease =
+    mode === 'release' || process.env.PRISM_CLEAN_RELEASE === 'true';
+  const env = isRelease ? {} : loadEnv(mode, process.cwd(), '');
+
+  const apiKeyToInject = isRelease ? '' : (env.VITE_GROQ_API_KEY ?? '');
+  const outDir = isRelease ? 'dist-release' : 'dist';
 
   return {
     plugins: [react()],
     define: {
-      'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(
-        env.VITE_GROQ_API_KEY ?? ''
-      ),
+      'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(apiKeyToInject),
     },
     build: {
-      outDir: 'dist',
+      outDir,
       emptyOutDir: true,
       rollupOptions: {
         input: {

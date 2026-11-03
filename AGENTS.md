@@ -23,7 +23,8 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 > [!IMPORTANT]
 > **Windows OS Note**: On this Windows machine, running `npm` directly in PowerShell can hit execution policy restrictions (`PSSecurityException`). Always execute npm commands through `cmd.exe /c`:
 > - Run tests: `cmd.exe /c npm test`
-> - Build project: `cmd.exe /c npm run build`
+> - Build project (dev/local with .env.local): `cmd.exe /c npm run build`
+> - Package clean BYOK release (zero keys, creates .zip in releases/): `cmd.exe /c npm run package`
 > - Dev server (if needed): `cmd.exe /c npm run dev`
 
 ### Verification Workflow for Any Changes
