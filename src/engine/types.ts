@@ -174,6 +174,8 @@ export interface PrismSettings {
   promptPresets: CustomPromptPreset[];
   instantExecution: boolean;
   collapseOthersOnGroup: boolean;
+  /** Automatically close blank/New Tab pages in the current window before grouping (default: true) */
+  closeEmptyTabs: boolean;
   deterministicOptions: DeterministicOptions;
   customRules: DeterministicRule[];
 }

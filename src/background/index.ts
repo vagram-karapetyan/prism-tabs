@@ -3,8 +3,10 @@ import { runSemanticGrouping } from '../engine/semantic';
 import {
   applyGroupingPlan,
   captureUndoSnapshot,
+  closeEmptyTabsInWindow,
   getCurrentWindowTabGroups,
   getCurrentWindowTabs,
+  isEmptyBrowserTab,
   ungroupAllTabsInWindow,
 } from '../services/chromeTabsService';
 import { geminiClient } from '../services/geminiService';
@@ -20,46 +22,57 @@ import {
  * Stateless event handlers ensure zero background memory leaks.
  */
 async function executeQuickPrismSort(): Promise<void> {
-  const [settings, tabs] = await Promise.all([
+  const [settings, allWindowTabs] = await Promise.all([
     loadSettings(),
     getCurrentWindowTabs(),
   ]);
 
-  if (tabs.length === 0) return;
+  if (allWindowTabs.length === 0) return;
 
-  const existingGroups = settings.deterministicOptions.preserveExistingGroups
-    ? await getCurrentWindowTabGroups(tabs)
-    : [];
-  const undoSnapshot = await captureUndoSnapshot();
-  await saveLastUndoSnapshot(undoSnapshot);
+  const shouldCloseEmpty = settings.closeEmptyTabs !== false;
+  const tabs = shouldCloseEmpty
+    ? allWindowTabs.filter((t) => !isEmptyBrowserTab(t))
+    : allWindowTabs;
 
-  const activeProvider = getActiveProviderConfig(settings);
+  if (tabs.length > 0) {
+    const existingGroups = settings.deterministicOptions.preserveExistingGroups
+      ? await getCurrentWindowTabGroups(tabs)
+      : [];
+    const undoSnapshot = await captureUndoSnapshot();
+    await saveLastUndoSnapshot(undoSnapshot);
 
-  const plan =
-    settings.mode === 'meaning'
-      ? await runSemanticGrouping({
-          tabs,
-          provider: activeProvider.provider,
-          apiKey: activeProvider.apiKey,
-          model: activeProvider.model,
-          baseUrl: activeProvider.baseUrl,
-          customPromptDirective: settings.customPromptDirective,
-          deterministicRules: settings.customRules,
-          deterministicOptions: settings.deterministicOptions,
-          existingGroups,
-          client: geminiClient,
-        })
-      : runDeterministicGrouping(
-          tabs,
-          settings.customRules,
-          settings.deterministicOptions,
-          existingGroups
-        );
+    const activeProvider = getActiveProviderConfig(settings);
 
-  await applyGroupingPlan(plan, {
-    collapseInactiveGroups: settings.collapseOthersOnGroup,
-    staggerMs: 36,
-  });
+    const plan =
+      settings.mode === 'meaning'
+        ? await runSemanticGrouping({
+            tabs,
+            provider: activeProvider.provider,
+            apiKey: activeProvider.apiKey,
+            model: activeProvider.model,
+            baseUrl: activeProvider.baseUrl,
+            customPromptDirective: settings.customPromptDirective,
+            deterministicRules: settings.customRules,
+            deterministicOptions: settings.deterministicOptions,
+            existingGroups,
+            client: geminiClient,
+          })
+        : runDeterministicGrouping(
+            tabs,
+            settings.customRules,
+            settings.deterministicOptions,
+            existingGroups
+          );
+
+    await applyGroupingPlan(plan, {
+      collapseInactiveGroups: settings.collapseOthersOnGroup,
+      staggerMs: 28,
+    });
+  }
+
+  if (shouldCloseEmpty) {
+    await closeEmptyTabsInWindow();
+  }
 }
 
 if (typeof chrome !== 'undefined' && chrome.commands) {

@@ -34,8 +34,9 @@ export const DEFAULT_PRISM_SETTINGS: PrismSettings = {
   customModel: 'gpt-4o-mini',
   customPromptDirective: DEFAULT_PROMPT_PRESETS[0].directive,
   promptPresets: DEFAULT_PROMPT_PRESETS,
-  instantExecution: false,
+  instantExecution: true,
   collapseOthersOnGroup: true,
+  closeEmptyTabs: true,
   deterministicOptions: DEFAULT_DETERMINISTIC_OPTIONS,
   customRules: DEFAULT_DETERMINISTIC_RULES,
 };
@@ -142,6 +143,7 @@ export async function loadSettings(): Promise<PrismSettings> {
     ...DEFAULT_PRISM_SETTINGS,
     ...stored,
     groqApiKey: resolvedGroqKey,
+    closeEmptyTabs: stored.closeEmptyTabs ?? true,
     deterministicOptions: {
       ...DEFAULT_DETERMINISTIC_OPTIONS,
       ...(stored.deterministicOptions ?? {}),

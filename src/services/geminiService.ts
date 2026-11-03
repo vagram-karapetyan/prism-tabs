@@ -8,11 +8,17 @@ import { AiProvider } from '../engine/types';
 export const GROQ_CHAT_COMPLETIONS_URL =
   'https://api.groq.com/openai/v1/chat/completions';
 
+/**
+ * Ordered pool of Groq models with independent per-model TPM buckets.
+ * If one model is unavailable (HTTP 404) or hits its per-minute token limit (HTTP 429),
+ * Prism automatically routes the request to the next model in the pool.
+ */
 export const GROQ_FALLBACK_MODELS = [
-  'llama-3.3-70b-versatile',
-  'openai/gpt-oss-120b',
-  'openai/gpt-oss-20b',
   'qwen/qwen3.8-27b',
+  'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
+  'allam-2-7b',
+  'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
 ] as const;
 
@@ -72,7 +78,10 @@ async function callOpenAiCompatibleProvider({
     signal,
     body: JSON.stringify({
       model,
-      temperature: 0.15,
+      temperature: 0.1,
+      // Explicitly cap max_tokens so Groq's pre-flight TPM limiter does not reserve
+      // 4096+ completion tokens upfront against the 8000 TPM free-tier quota
+      max_tokens: 1200,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
@@ -83,11 +92,13 @@ async function callOpenAiCompatibleProvider({
 
   if (!response.ok) {
     const { detailMessage, errorCode } = await parseApiErrorDetails(response);
-    const suffix = detailMessage ? `: ${detailMessage}` : '';
+    const shortDetail = detailMessage
+      ? `: ${detailMessage.split('.')[0]}`
+      : '';
 
     if (response.status === 429) {
       throw new GeminiApiError(
-        `${providerLabel} API rate limit exceeded (HTTP 429)${suffix}`,
+        `${providerLabel} API rate limit (HTTP 429)${shortDetail}`,
         429,
         true,
         errorCode
@@ -99,14 +110,14 @@ async function callOpenAiCompatibleProvider({
       response.status === 403
     ) {
       throw new GeminiApiError(
-        `${providerLabel} API error (HTTP ${response.status})${suffix}`,
+        `${providerLabel} API error (HTTP ${response.status})${shortDetail}`,
         response.status,
         false,
         errorCode
       );
     }
     throw new GeminiApiError(
-      `${providerLabel} API returned HTTP ${response.status}${suffix}`,
+      `${providerLabel} API returned HTTP ${response.status}${shortDetail}`,
       response.status,
       false,
       errorCode
@@ -132,9 +143,10 @@ async function callOpenAiCompatibleProvider({
 }
 
 /**
- * Calls Groq's `/openai/v1/chat/completions` endpoint with automatic model fallback
- * if the primary model (e.g., `llama-3.3-70b-versatile`) returns HTTP 404 (`model_not_found`)
- * due to account/project model permissions or catalog updates.
+ * Calls Groq's `/openai/v1/chat/completions` endpoint with automatic multi-model rotation:
+ * - If a model returns HTTP 404 (`model_not_found`), HTTP 429 (per-model TPM rate limit),
+ *   or HTTP 503, Prism immediately rotates to the next active model in `GROQ_FALLBACK_MODELS`
+ *   (each model has its own independent 8,000 TPM quota on Groq).
  */
 async function callGroqWithModelFallback({
   apiKey,
@@ -149,7 +161,7 @@ async function callGroqWithModelFallback({
   userPayload: string;
   signal: AbortSignal;
 }): Promise<unknown> {
-  const primary = (preferredModel || 'llama-3.3-70b-versatile').trim();
+  const primary = (preferredModel || 'qwen/qwen3.8-27b').trim();
   const candidates = [
     primary,
     ...GROQ_FALLBACK_MODELS.filter((m) => m !== primary),
@@ -170,20 +182,24 @@ async function callGroqWithModelFallback({
       });
     } catch (err) {
       lastError = err;
-      const isModelNotFound =
+      const shouldTryNextModel =
         err instanceof GeminiApiError &&
-        (err.statusCode === 404 || err.errorCode === 'model_not_found');
+        (err.statusCode === 404 ||
+          err.statusCode === 429 ||
+          err.statusCode === 503 ||
+          err.isRateLimit ||
+          err.errorCode === 'model_not_found');
 
-      if (!isModelNotFound) {
+      if (!shouldTryNextModel) {
         throw err;
       }
-      // Continue to next active Groq model candidate
+      // Rotate to next Groq model with its own independent TPM bucket
     }
   }
 
   throw lastError instanceof Error
     ? lastError
-    : new GeminiApiError('Groq API: no accessible models succeeded');
+    : new GeminiApiError('Groq API: all models exhausted');
 }
 
 /**
@@ -219,7 +235,7 @@ export const geminiClient: SemanticCompletionClient = {
       if (effectiveProvider === 'groq') {
         return await callGroqWithModelFallback({
           apiKey: cleanKey,
-          preferredModel: model || 'llama-3.3-70b-versatile',
+          preferredModel: model || 'qwen/qwen3.8-27b',
           systemPrompt,
           userPayload,
           signal: controller.signal,

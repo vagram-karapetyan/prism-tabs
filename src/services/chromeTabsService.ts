@@ -22,6 +22,95 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const EMPTY_TAB_URL_PATTERNS = [
+  /^chrome:\/\/newtab\/?$/i,
+  /^chrome-search:\/\/local-ntp/i,
+  /^edge:\/\/newtab\/?$/i,
+  /^brave:\/\/newtab\/?$/i,
+  /^vivaldi:\/\/newtab\/?$/i,
+  /^opera:\/\/startpage\/?$/i,
+  /^about:(newtab|blank|home)$/i,
+];
+
+const EMPTY_TAB_TITLES = new Set([
+  'new tab',
+  'новая вкладка',
+  'нова вкладка',
+  'untitled',
+  'untitled tab',
+  'about:blank',
+]);
+
+/**
+ * Checks whether a tab is an empty "New Tab" or `about:blank` page.
+ * Never matches pinned tabs.
+ */
+export function isEmptyBrowserTab(tab: {
+  url?: string;
+  pendingUrl?: string;
+  title?: string;
+  pinned?: boolean;
+}): boolean {
+  if (tab.pinned) return false;
+
+  const rawUrl = (tab.url || tab.pendingUrl || '').trim();
+  const rawTitle = (tab.title || '').trim().toLowerCase();
+
+  if (!rawUrl) {
+    return !rawTitle || EMPTY_TAB_TITLES.has(rawTitle);
+  }
+
+  return EMPTY_TAB_URL_PATTERNS.some((rx) => rx.test(rawUrl));
+}
+
+/**
+ * Closes all unpinned empty ("New Tab" / `about:blank`) tabs strictly in the current active window.
+ * If every single tab in the window is empty, keeps 1 tab open so the browser window itself isn't closed.
+ */
+export async function closeEmptyTabsInWindow(): Promise<number> {
+  if (!isChromeTabsAvailable()) {
+    const emptyIds = demoTabState
+      .filter((t) => isEmptyBrowserTab(t))
+      .map((t) => t.id);
+    if (emptyIds.length === 0) return 0;
+
+    const idsToClose =
+      emptyIds.length >= demoTabState.length ? emptyIds.slice(1) : emptyIds;
+    if (idsToClose.length === 0) return 0;
+
+    const removeSet = new Set(idsToClose);
+    demoTabState = demoTabState.filter((t) => !removeSet.has(t.id));
+    return idsToClose.length;
+  }
+
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const emptyTabIds = tabs
+    .filter(
+      (t): t is chrome.tabs.Tab & { id: number } =>
+        typeof t.id === 'number' && isEmptyBrowserTab(t)
+    )
+    .map((t) => t.id);
+
+  if (emptyTabIds.length === 0) {
+    return 0;
+  }
+
+  // Keep 1 tab alive if 100% of tabs in the window are empty New Tabs
+  const idsToRemove =
+    emptyTabIds.length >= tabs.length ? emptyTabIds.slice(1) : emptyTabIds;
+
+  if (idsToRemove.length === 0) {
+    return 0;
+  }
+
+  try {
+    await chrome.tabs.remove(idsToRemove);
+    return idsToRemove.length;
+  } catch {
+    return 0;
+  }
+}
+
 /**
  * Fallback demo tabs used only when previewing the UI in a standalone browser tab
  * outside the Chrome Extension runtime.
@@ -110,7 +199,7 @@ let demoGroupMeta = new Map<
 >([[1, { title: '🐙 GitHub: prism-org/prism', color: 'purple', collapsed: false }]]);
 
 /**
- * Queries all open tabs in the current window.
+ * Queries all open tabs strictly in the current active window (`currentWindow: true`).
  */
 export async function getCurrentWindowTabs(): Promise<TabMetadata[]> {
   if (!isChromeTabsAvailable()) {
@@ -134,8 +223,9 @@ export async function getCurrentWindowTabs(): Promise<TabMetadata[]> {
 }
 
 /**
- * Queries all existing Chrome Tab Groups in the current window (`chrome.tabGroups.query`),
- * pairing each group with the ordered list of `tabIds` currently inside it.
+ * Queries all existing Chrome Tab Groups strictly in the current active window
+ * (`chrome.windows.WINDOW_ID_CURRENT`), pairing each group with the ordered list
+ * of `tabIds` currently inside it.
  */
 export async function getCurrentWindowTabGroups(
   currentTabs?: TabMetadata[]
@@ -163,9 +253,9 @@ export async function getCurrentWindowTabGroups(
     return result;
   }
 
-  const currentWindow = await chrome.windows.getCurrent();
-  const windowId = currentWindow.id ?? chrome.windows.WINDOW_ID_CURRENT;
-  const nativeGroups = await chrome.tabGroups.query({ windowId });
+  const nativeGroups = await chrome.tabGroups.query({
+    windowId: chrome.windows.WINDOW_ID_CURRENT,
+  });
 
   const tabIdsByGroupId = new Map<number, number[]>();
   for (const tab of tabs) {
@@ -195,7 +285,7 @@ export async function getCurrentWindowTabGroups(
 }
 
 /**
- * Captures a full snapshot of the current window's tab order and group states
+ * Captures a full snapshot of the current active window's tab order and group states
  * so the user can Undo with 1 click.
  */
 export async function captureUndoSnapshot(): Promise<UndoSnapshot> {
@@ -218,11 +308,15 @@ export async function captureUndoSnapshot(): Promise<UndoSnapshot> {
     };
   }
 
-  const currentWindow = await chrome.windows.getCurrent();
-  const windowId = currentWindow.id ?? chrome.windows.WINDOW_ID_CURRENT;
-  const tabs = await chrome.tabs.query({ windowId });
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const windowId =
+    tabs[0]?.windowId ??
+    (await chrome.windows.getCurrent()).id ??
+    chrome.windows.WINDOW_ID_CURRENT;
 
-  const existingGroups = await chrome.tabGroups.query({ windowId });
+  const existingGroups = await chrome.tabGroups.query({
+    windowId: chrome.windows.WINDOW_ID_CURRENT,
+  });
   const groupMap = new Map<number, chrome.tabGroups.TabGroup>();
   for (const g of existingGroups) {
     groupMap.set(g.id, g);
@@ -259,7 +353,7 @@ export interface ApplyGroupingPlanOptions {
 }
 
 /**
- * Applies a `GroupingPlan` to the active Chrome window with:
+ * Applies a `GroupingPlan` strictly to the current active Chrome window (`currentWindow: true`) with:
  * 1. Non-destructive merging into existing `chrome.tabGroups` (`groupId: group.existingGroupId`)
  *    OR Clean Slate mode when `existingGroupId` is absent.
  * 2. Choreographed, staggered `chrome.tabs.move` + `chrome.tabs.group` sequencing so tabs
@@ -271,7 +365,7 @@ export async function applyGroupingPlan(
   options: ApplyGroupingPlanOptions = {}
 ): Promise<void> {
   const collapseInactive = options.collapseInactiveGroups ?? true;
-  const staggerMs = options.staggerMs ?? 36;
+  const staggerMs = options.staggerMs ?? 32;
   const completedGroupIds: string[] = [];
   const totalGroups = plan.groups.length;
 
@@ -338,28 +432,30 @@ export async function applyGroupingPlan(
       );
 
       completedGroupIds.push(group.id);
-      await sleep(Math.round(staggerMs * 1.3));
+      await sleep(Math.round(staggerMs * 1.2));
     }
 
     emitProgress({ phase: 'complete', activeGroupId: null, activeTabId: null });
     return;
   }
 
-  const currentWindow = await chrome.windows.getCurrent();
-  const windowId = currentWindow.id;
+  const initialTabs = await chrome.tabs.query({ currentWindow: true });
+  const windowId =
+    initialTabs[0]?.windowId ?? (await chrome.windows.getCurrent()).id;
+
   const [activeTab] = await chrome.tabs.query({
     active: true,
     currentWindow: true,
   });
   const activeTabId = activeTab?.id;
 
-  const initialTabs = await chrome.tabs.query({ currentWindow: true });
+  // Strictly restrict operations to tabs currently inside this active window
   const liveTabIds = new Set(
     initialTabs.map((t) => t.id).filter((id): id is number => typeof id === 'number')
   );
 
   // If running in Clean Slate Mode (no preserved existingGroupId in plan),
-  // ungroup existing grouped tabs first so they smoothly reorganize into the new structure.
+  // ungroup existing grouped tabs in this window first so they smoothly reorganize.
   const hasAnyPreservedGroup = plan.groups.some(
     (g) => typeof g.existingGroupId === 'number'
   );
@@ -401,7 +497,7 @@ export async function applyGroupingPlan(
     const formattedTitle = `${group.emoji} ${group.groupName}`.trim();
     const shouldStayExpanded = !collapseInactive || groupIdx === expandedGroupIdx;
 
-    // CASE 1: Non-Destructive Merge into an Existing Chrome Tab Group
+    // CASE 1: Non-Destructive Merge into an Existing Chrome Tab Group in this window
     if (typeof group.existingGroupId === 'number') {
       const addedTabIds = (group.addedTabIds ?? []).filter((id) =>
         liveTabIds.has(id)
@@ -461,12 +557,12 @@ export async function applyGroupingPlan(
 
       completedGroupIds.push(group.id);
       if (addedTabIds.length > 0) {
-        await sleep(Math.round(staggerMs * 1.25));
+        await sleep(Math.round(staggerMs * 1.2));
       }
       continue;
     }
 
-    // CASE 2: Choreographed Staggered Creation of a Brand-New Group
+    // CASE 2: Choreographed Staggered Creation of a Brand-New Group in this window
     const snapshotBeforeMove = await chrome.tabs.query({ currentWindow: true });
     const firstMemberTab = snapshotBeforeMove.find((t) =>
       validTabIds.includes(t.id ?? -1)
@@ -499,7 +595,10 @@ export async function applyGroupingPlan(
 
     const newGroupId = await chrome.tabs.group({
       tabIds: validTabIds,
-      createProperties: windowId ? { windowId } : undefined,
+      createProperties:
+        typeof windowId === 'number' && windowId >= 0
+          ? { windowId }
+          : undefined,
     });
 
     await chrome.tabGroups.update(newGroupId, {
@@ -509,14 +608,14 @@ export async function applyGroupingPlan(
     });
 
     completedGroupIds.push(group.id);
-    await sleep(Math.round(staggerMs * 1.4));
+    await sleep(Math.round(staggerMs * 1.25));
   }
 
   emitProgress({ phase: 'complete', activeGroupId: null, activeTabId: null });
 }
 
 /**
- * Ungroups all currently grouped tabs in the active window.
+ * Ungroups all currently grouped tabs strictly in the active window (`currentWindow: true`).
  */
 export async function ungroupAllTabsInWindow(): Promise<number> {
   if (!isChromeTabsAvailable()) {
@@ -545,8 +644,7 @@ export async function ungroupAllTabsInWindow(): Promise<number> {
 }
 
 /**
- * Restores a previously captured `UndoSnapshot` (ungrouping newly grouped tabs
- * and re-creating previous groups and tab order).
+ * Restores a previously captured `UndoSnapshot` strictly within the active window.
  */
 export async function restoreUndoSnapshot(snapshot: UndoSnapshot): Promise<void> {
   if (!isChromeTabsAvailable()) {
@@ -558,6 +656,7 @@ export async function restoreUndoSnapshot(snapshot: UndoSnapshot): Promise<void>
   }
 
   const liveTabs = await chrome.tabs.query({ currentWindow: true });
+  const windowId = liveTabs[0]?.windowId;
   const liveTabIds = new Set(
     liveTabs.map((t) => t.id).filter((id): id is number => typeof id === 'number')
   );
@@ -605,7 +704,13 @@ export async function restoreUndoSnapshot(snapshot: UndoSnapshot): Promise<void>
 
   for (const prevGroup of previousGroups.values()) {
     if (prevGroup.tabIds.length === 0) continue;
-    const newGroupId = await chrome.tabs.group({ tabIds: prevGroup.tabIds });
+    const newGroupId = await chrome.tabs.group({
+      tabIds: prevGroup.tabIds,
+      createProperties:
+        typeof windowId === 'number' && windowId >= 0
+          ? { windowId }
+          : undefined,
+    });
     await chrome.tabGroups.update(newGroupId, {
       title: prevGroup.title ?? '',
       color: prevGroup.color ?? 'grey',
