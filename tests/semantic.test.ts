@@ -44,16 +44,20 @@ describe('Semantic Engine — Privacy Sanitizer & Payload Builder', () => {
 });
 
 describe('Semantic Engine — Custom User Prompt & Existing Groups Injection', () => {
-  it('includes "YouTube by Topic" in DEFAULT_PROMPT_PRESETS and injects properly', () => {
-    const ytPreset = DEFAULT_PROMPT_PRESETS.find((p) => p.id === 'preset-youtube-topics');
-    expect(ytPreset).toBeDefined();
-    expect(ytPreset?.label).toBe('YouTube by Topic');
-    expect(ytPreset?.directive).toContain('YouTube');
-    expect(ytPreset?.directive).toContain('strictly contain ONLY YouTube tabs');
+  it('includes "✨ Smart Magic (Default)" as the single master preset in DEFAULT_PROMPT_PRESETS and injects properly', () => {
+    expect(DEFAULT_PROMPT_PRESETS).toHaveLength(1);
+    const magicPreset = DEFAULT_PROMPT_PRESETS[0];
+    expect(magicPreset.id).toBe('preset-magic-smart');
+    expect(magicPreset.label).toBe('✨ Smart Magic (Default)');
+    expect(magicPreset.directive).toContain('YouTube Разное');
+    expect(magicPreset.directive).toContain('Разное');
+    expect(magicPreset.directive).toContain('cross-domain project intent');
 
-    const prompt = buildSemanticSystemPrompt(ytPreset?.directive);
+    const prompt = buildSemanticSystemPrompt(magicPreset.directive);
     expect(prompt).toContain('<USER_SORTING_DIRECTIVES>');
-    expect(prompt).toContain(ytPreset?.directive);
+    expect(prompt).toContain(magicPreset.directive);
+    expect(prompt).toContain('YOUTUBE ISOLATION & CLUSTERING');
+    expect(prompt).toContain('SINGLETON TAB SUPPRESSION');
   });
 
   it('dynamically injects custom user sorting directives into the system prompt', () => {

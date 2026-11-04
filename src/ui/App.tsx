@@ -507,63 +507,76 @@ export const App: React.FC = () => {
   return (
     <div className="flex flex-col w-full h-full bg-prism-bg text-slate-900 dark:text-slate-100 p-3 gap-2 select-none overflow-hidden">
       {/* Top Minimal Header Bar */}
-      <header className="flex shrink-0 items-center justify-between">
+      <header className="flex shrink-0 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 pb-2">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-slate-300 dark:border-slate-700/80 flex items-center justify-center shadow-xs">
-            <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            {isSettingsOpen ? (
+              <Settings className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            ) : (
+              <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            )}
           </div>
-          <h1
-            className="text-sm font-bold tracking-tight bg-clip-text text-transparent"
-            style={{ backgroundImage: 'var(--prism-title-gradient)' }}
-          >
-            PRISM
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1
+              className="text-sm font-bold tracking-tight bg-clip-text text-transparent"
+              style={{ backgroundImage: 'var(--prism-title-gradient)' }}
+            >
+              PRISM
+            </h1>
+            {isSettingsOpen && (
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 border-l border-slate-300 dark:border-slate-700 pl-1.5 leading-none">
+                Settings
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Single Settings Gear Button ⚙️ */}
+        {/* Settings Toggle / Close Button */}
         <button
           type="button"
           onClick={() => setIsSettingsOpen((prev) => !prev)}
           className={`inline-flex items-center justify-center rounded-lg border p-1.5 transition-colors ${
             isSettingsOpen
-              ? 'border-indigo-500/60 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300'
+              ? 'border-indigo-500/60 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/30'
               : 'border-slate-200 dark:border-slate-800 bg-prism-surface text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
-          title="Settings (AI Setup, Rules, Themes & Behavior)"
-          aria-label="Settings"
+          title={isSettingsOpen ? 'Close Settings' : 'Settings (AI Setup, Rules, Themes & Behavior)'}
+          aria-label={isSettingsOpen ? 'Close Settings' : 'Settings'}
         >
-          <Settings className="w-4 h-4" />
+          {isSettingsOpen ? <X className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
         </button>
       </header>
 
-      {/* Dual-Engine Mode Switcher Pill */}
-      <div className="grid shrink-0 grid-cols-2 gap-1.5 rounded-xl bg-prism-surface p-1 border border-slate-200 dark:border-slate-800/90 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => handleSwitchMode('logic')}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2.5 text-xs font-semibold transition-all ${
-            settings.mode === 'logic'
-              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 shadow-xs'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
-          }`}
-        >
-          <Cpu className="w-3.5 h-3.5" />
-          <span>Logic Mode</span>
-        </button>
+      {/* Dual-Engine Mode Switcher Pill — shown strictly on main sorting screen */}
+      {!isSettingsOpen && (
+        <div className="grid shrink-0 grid-cols-2 gap-1.5 rounded-xl bg-prism-surface p-1 border border-slate-200 dark:border-slate-800/90 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => handleSwitchMode('logic')}
+            className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2.5 text-xs font-semibold transition-all ${
+              settings.mode === 'logic'
+                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            <Cpu className="w-3.5 h-3.5" />
+            <span>Logic Mode</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => handleSwitchMode('meaning')}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2.5 text-xs font-semibold transition-all ${
-            settings.mode === 'meaning'
-              ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 border border-indigo-500/40 shadow-xs'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Meaning Mode</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => handleSwitchMode('meaning')}
+            className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2.5 text-xs font-semibold transition-all ${
+              settings.mode === 'meaning'
+                ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-200 border border-indigo-500/40 shadow-xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Meaning Mode</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Content: Either Unified Settings Sheet OR One-Click Prism Interface */}
       {isSettingsOpen ? (
@@ -789,29 +802,31 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Minimal Footer Bar: Undo & Ungroup All */}
-      <footer className="flex shrink-0 items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-1.5 text-[11px]">
-        <button
-          type="button"
-          disabled={!undoSnapshot}
-          onClick={handleUndo}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-2xs"
-          title="Undo last grouping action (Ctrl+Z)"
-        >
-          <RotateCcw className="w-3 h-3" />
-          <span>Undo</span>
-        </button>
+      {/* Minimal Footer Bar: Undo & Ungroup All — shown on main screen */}
+      {!isSettingsOpen && (
+        <footer className="flex shrink-0 items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-1.5 text-[11px]">
+          <button
+            type="button"
+            disabled={!undoSnapshot}
+            onClick={handleUndo}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-2xs"
+            title="Undo last grouping action (Ctrl+Z)"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Undo</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={handleUngroupAll}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-300 hover:border-red-400/40 dark:hover:border-red-500/30 transition-colors shadow-2xs"
-          title="Ungroup all tabs in current window (Alt+U)"
-        >
-          <Unlink className="w-3 h-3" />
-          <span>Ungroup All</span>
-        </button>
-      </footer>
+          <button
+            type="button"
+            onClick={handleUngroupAll}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-prism-surface px-2.5 py-1 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-300 hover:border-red-400/40 dark:hover:border-red-500/30 transition-colors shadow-2xs"
+            title="Ungroup all tabs in current window (Alt+U)"
+          >
+            <Unlink className="w-3 h-3" />
+            <span>Ungroup All</span>
+          </button>
+        </footer>
+      )}
     </div>
   );
 };

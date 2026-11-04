@@ -156,15 +156,28 @@ export async function loadSettings(): Promise<PrismSettings> {
       Array.isArray(stored.customRules) && stored.customRules.length > 0
         ? stored.customRules
         : DEFAULT_DETERMINISTIC_RULES,
+    customPromptDirective:
+      stored.customPromptDirective &&
+      stored.customPromptDirective !== 'Cluster tabs by high-level task intent across different domains (e.g., grouping a GitHub PR, a Linear ticket, and a Vercel preview deployment for the same feature together).'
+        ? stored.customPromptDirective
+        : DEFAULT_PROMPT_PRESETS[0].directive,
     promptPresets: (() => {
       if (!Array.isArray(stored.promptPresets) || stored.promptPresets.length === 0) {
         return DEFAULT_PROMPT_PRESETS;
       }
-      const existingIds = new Set(stored.promptPresets.map((p) => p.id));
-      const missingDefaults = DEFAULT_PROMPT_PRESETS.filter((p) => !existingIds.has(p.id));
-      return missingDefaults.length > 0
-        ? [...stored.promptPresets, ...missingDefaults]
-        : stored.promptPresets;
+      const legacyDefaultIds = new Set([
+        'preset-task-intent',
+        'preset-youtube-topics',
+        'preset-project-urgency',
+        'preset-dev-vs-personal',
+        'preset-shopping-gifts',
+      ]);
+      const customUserPresets = stored.promptPresets.filter((p) => !legacyDefaultIds.has(p.id));
+      const hasMagic = stored.promptPresets.some((p) => p.id === 'preset-magic-smart');
+      if (!hasMagic) {
+        return [DEFAULT_PROMPT_PRESETS[0], ...customUserPresets];
+      }
+      return stored.promptPresets;
     })(),
   };
 
