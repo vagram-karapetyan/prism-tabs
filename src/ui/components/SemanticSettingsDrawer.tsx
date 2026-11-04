@@ -322,7 +322,7 @@ export const SemanticSettingsDrawer: React.FC<SemanticSettingsDrawerProps> = ({
           onChange={(e) =>
             onSaveSettings({ customPromptDirective: e.target.value })
           }
-          placeholder="e.g. Group by project urgency, cluster shopping tabs by gift recipient, or strictly separate personal research from dev tickets..."
+          placeholder="e.g. Group YouTube videos by topic into isolated groups, cluster by project urgency, or separate dev from personal..."
           className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-[11px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
         />
 

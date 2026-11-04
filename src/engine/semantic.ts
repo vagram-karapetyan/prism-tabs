@@ -29,6 +29,12 @@ export const DEFAULT_PROMPT_PRESETS: CustomPromptPreset[] = [
       'Cluster tabs by high-level task intent across different domains (e.g., grouping a GitHub PR, a Linear ticket, and a Vercel preview deployment for the same feature together).',
   },
   {
+    id: 'preset-youtube-topics',
+    label: 'YouTube by Topic',
+    directive:
+      'Cluster YouTube videos into dedicated topic-specific groups based on their subject (e.g., Gaming, Programming, Music, Science). YouTube groups must strictly contain ONLY YouTube tabs—never mix other websites into them.',
+  },
+  {
     id: 'preset-project-urgency',
     label: 'By Project Urgency',
     directive:

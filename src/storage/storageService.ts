@@ -156,10 +156,16 @@ export async function loadSettings(): Promise<PrismSettings> {
       Array.isArray(stored.customRules) && stored.customRules.length > 0
         ? stored.customRules
         : DEFAULT_DETERMINISTIC_RULES,
-    promptPresets:
-      Array.isArray(stored.promptPresets) && stored.promptPresets.length > 0
-        ? stored.promptPresets
-        : DEFAULT_PROMPT_PRESETS,
+    promptPresets: (() => {
+      if (!Array.isArray(stored.promptPresets) || stored.promptPresets.length === 0) {
+        return DEFAULT_PROMPT_PRESETS;
+      }
+      const existingIds = new Set(stored.promptPresets.map((p) => p.id));
+      const missingDefaults = DEFAULT_PROMPT_PRESETS.filter((p) => !existingIds.has(p.id));
+      return missingDefaults.length > 0
+        ? [...stored.promptPresets, ...missingDefaults]
+        : stored.promptPresets;
+    })(),
   };
 
   // Persist auto-seeded VITE_GROQ_API_KEY into chrome.storage.local if it wasn't saved yet

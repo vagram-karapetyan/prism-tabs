@@ -3,7 +3,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](./LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-emerald.svg)](./public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](./tsconfig.json)
-[![Tests](https://img.shields.io/badge/Tests-58%2F58%20passing-brightgreen.svg)](./tests)
+[![Tests](https://img.shields.io/badge/Tests-59%2F59%20passing-brightgreen.svg)](./tests)
 [![AI Engine](https://img.shields.io/badge/AI-Groq%20%7C%20Gemini%20%7C%20BYOK-orange.svg)](#3-configuring-ai-providers-optional--meaning-mode)
 
 **Prism** is a fast, privacy-first, open-source Google Chrome extension that eliminates tab overload through a **Dual-Engine Grouping Architecture**:
@@ -126,7 +126,7 @@ Running `npm run build` compiles TypeScript and bundles the production extension
 ### 4. Running Tests & Typecheck
 
 ```bash
-# Run the Vitest unit test suite (58 tests)
+# Run the Vitest unit test suite (59 tests)
 npm test
 
 # Run TypeScript strict type-checking

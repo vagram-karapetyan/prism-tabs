@@ -14,7 +14,7 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 - **Framework & UI**: React 18, TypeScript 5.6 (strict mode), Tailwind CSS (`darkMode: 'class'`), Lucide React.
 - **Build Tool**: Vite 5 (`vite build`), generating bundle into `dist/`.
 - **Target Platform**: Google Chrome / Chromium Manifest V3 (`chrome.tabGroups`, `chrome.tabs`, `chrome.storage.local`).
-- **Test Runner**: Vitest (58/58 unit tests passing).
+- **Test Runner**: Vitest (59/59 unit tests passing).
 
 ---
 
@@ -28,7 +28,7 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 > - Dev server (if needed): `cmd.exe /c npm run dev`
 
 ### Verification Workflow for Any Changes
-1. Run unit test suite: `cmd.exe /c npm test` (all 58 tests must pass).
+1. Run unit test suite: `cmd.exe /c npm test` (all 59 tests must pass).
 2. Build extension bundle: `cmd.exe /c npm run build` (always ensure `dist/` is updated and in sync before committing).
 3. Check Git status: `git status`.
 
@@ -120,7 +120,7 @@ prism-tabs/
    - Complete light-mode contrast audit (PRISM gradient, buttons, inputs, badges).
    - Animated spectral refraction progress bar with optical prism animation.
 3. **Automated Testing & Documentation**:
-   - 58 unit tests passing across 5 suites (`tests/`).
+   - 59 unit tests passing across 5 suites (`tests/`).
    - Strict TypeScript (`strict: true`) with zero compilation errors.
    - GitHub Markdown Mermaid diagrams formatted with explicit `<br/>` line wrapping to eliminate text clipping on GitHub.
    - Clean git history with zero unused artifacts.

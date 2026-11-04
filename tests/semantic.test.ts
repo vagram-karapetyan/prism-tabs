@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   buildSemanticSystemPrompt,
   buildSemanticUserPayload,
+  DEFAULT_PROMPT_PRESETS,
   extractJsonFromLlmOutput,
   runSemanticGrouping,
   sanitizeTabMetadata,
@@ -43,6 +44,18 @@ describe('Semantic Engine — Privacy Sanitizer & Payload Builder', () => {
 });
 
 describe('Semantic Engine — Custom User Prompt & Existing Groups Injection', () => {
+  it('includes "YouTube by Topic" in DEFAULT_PROMPT_PRESETS and injects properly', () => {
+    const ytPreset = DEFAULT_PROMPT_PRESETS.find((p) => p.id === 'preset-youtube-topics');
+    expect(ytPreset).toBeDefined();
+    expect(ytPreset?.label).toBe('YouTube by Topic');
+    expect(ytPreset?.directive).toContain('YouTube');
+    expect(ytPreset?.directive).toContain('strictly contain ONLY YouTube tabs');
+
+    const prompt = buildSemanticSystemPrompt(ytPreset?.directive);
+    expect(prompt).toContain('<USER_SORTING_DIRECTIVES>');
+    expect(prompt).toContain(ytPreset?.directive);
+  });
+
   it('dynamically injects custom user sorting directives into the system prompt', () => {
     const directive =
       'Cluster shopping tabs by gift recipient and strictly separate personal research from dev tickets.';
