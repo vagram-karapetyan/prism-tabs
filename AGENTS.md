@@ -21,21 +21,23 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 ## 🛠️ Essential Commands & Dev Environment Notes
 
 > [!IMPORTANT]
-> **Windows OS Note**: On this Windows machine, running `npm` directly in PowerShell can hit execution policy restrictions (`PSSecurityException`). Always execute npm commands through `cmd.exe /c`:
-> - Run tests: `cmd.exe /c npm test`
-> - Typecheck: `cmd.exe /c npm run typecheck`
-> - Build project (dev/local with .env.local): `cmd.exe /c npm run build`
-> - Package clean BYOK release (zero keys, creates .zip in releases/): `cmd.exe /c npm run package`
-> - Dev server (if needed): `cmd.exe /c npm run dev`
+> **PowerShell-First Automation Principle**:
+> All build, packaging, release, and verification automation in this repository is strictly **PowerShell (`.ps1`)** based.
+> **No `.bat` or `.cmd` files and no `cmd.exe /c` wrappers are allowed.**
+> Commands are run natively in PowerShell or via npm scripts wrapping PowerShell scripts:
+> - Full verification loop: `npm run verify` (or `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`)
+> - Run tests: `npm test` (all 66 vitest tests)
+> - Typecheck: `npm run typecheck` (tsc in strict mode)
+> - Build project (dev/local with .env.local): `npm run build`
+> - Package clean BYOK release (zero keys, creates .zip in releases/): `npm run package` (or `powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1`)
+> - Automatic GitHub Release: `npm run release` (or `powershell -ExecutionPolicy Bypass -File scripts/publish-release.ps1`)
+> - Dev server (if needed): `npm run dev`
 
 ### Verification Workflow for Any Changes
-1. Run unit test suite: `cmd.exe /c npm test` (all 66 tests must pass).
-2. Run typecheck: `cmd.exe /c npm run typecheck` (0 errors in strict mode).
-3. Build extension bundle: `cmd.exe /c npm run build` (always ensure `dist/` is updated and in sync before committing).
-4. Run clean packaging & secret audit: `cmd.exe /c npm run package` (verifies 0 personal keys in releases).
-5. Check Git status: `git status`.
-6. **Automatic Git Commit & Push**: Commit with Conventional Commits and push to `origin/main` (`git push origin main`).
-7. **Automatic GitHub Release**: On version updates, publish clean distribution archive to GitHub via `cmd.exe /c npm run release` (tags commit and uploads `.zip` using `gh release create`).
+1. Run full verification loop: `npm run verify` (runs unit tests, typecheck, production build, and clean packaging audit).
+2. Check Git status: `git status`.
+3. **Automatic Git Commit & Push**: Commit with Conventional Commits and push to `origin/main` (`git push origin main`).
+4. **Automatic GitHub Release**: On version updates, publish clean distribution archive to GitHub via `npm run release` (tags commit and uploads `.zip` using `gh release create`).
 
 ---
 
@@ -67,12 +69,13 @@ When working on this codebase, all AI agents must follow the core ECC standards 
 - Eliminate dead code, unused parameters, and runtime warnings (e.g. Node 22 experimental globals).
 
 ### 5. Verification & Release Loop (`verification-loop`)
-- **Types**: `cmd.exe /c npm run typecheck` $\rightarrow$ 0 errors.
-- **Tests**: `cmd.exe /c npm test` $\rightarrow$ 100% pass rate.
-- **Build**: `cmd.exe /c npm run build` $\rightarrow$ clean production bundle in `dist/`.
-- **Security & Packaging**: `cmd.exe /c npm run package` $\rightarrow$ automated secret scan passes with 0 leaks & builds clean `.zip`.
+- **Full Verification**: `npm run verify` $\rightarrow$ runs unit tests, typecheck, production build, and security audit.
+- **Types**: `npm run typecheck` $\rightarrow$ 0 errors.
+- **Tests**: `npm test` $\rightarrow$ 100% pass rate.
+- **Build**: `npm run build` $\rightarrow$ clean production bundle in `dist/`.
+- **Security & Packaging**: `npm run package` $\rightarrow$ PowerShell secret scan passes with 0 leaks & builds clean `.zip`.
 - **Git Commit & Push**: Commit with Conventional Commits and push immediately to `origin/main`.
-- **GitHub Release Automation**: Run `cmd.exe /c npm run release` to automatically publish tag and `.zip` asset to GitHub Releases.
+- **GitHub Release Automation**: Run `npm run release` to automatically publish tag and `.zip` asset to GitHub Releases.
 - **Diff**: Review `git diff` for unintended whitespace or accidental modifications.
 
 ---
@@ -116,7 +119,9 @@ prism-tabs/
 │   └── themes.test.ts              # Theme registry, config export/import & storage persistence tests
 ├── scripts/
 │   ├── generate-icons.mjs          # SVG to high-res PNG icon rasterizer
-│   └── package-release.mjs         # Clean BYOK release packager & automated secret audit
+│   ├── verify.ps1                  # PowerShell full verification loop (tests, types, build, secret scan)
+│   ├── package-release.ps1         # PowerShell clean BYOK packager & automated secret audit
+│   └── publish-release.ps1         # PowerShell automated GitHub release & asset publisher
 ├── popup.html                      # Chrome action popup entry point
 └── tailwind.config.js              # Tailwind setup with darkMode: 'class'
 ```
