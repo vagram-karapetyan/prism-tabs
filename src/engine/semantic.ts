@@ -415,10 +415,14 @@ export function validateAndNormalizeSemanticResponse(
     .filter((id) => !assignedTabIds.has(id));
 
   if (omittedTabIds.length > 0) {
+    const hasCyrillic = eligibleTabs.some((t) => /[а-яё]/i.test(t.title));
+    const fallbackTitle = hasCyrillic ? 'Разное' : 'Other Tabs';
+    const fallbackEmoji = hasCyrillic ? '🌐' : '🗂️';
+
     newNormalizedGroups.push({
       id: 'semantic-group-unassigned',
-      groupName: 'Other Tabs',
-      emoji: '🗂️',
+      groupName: fallbackTitle,
+      emoji: fallbackEmoji,
       color: 'grey',
       tabIds: omittedTabIds,
       source: 'semantic',

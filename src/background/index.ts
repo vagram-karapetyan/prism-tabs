@@ -4,6 +4,7 @@ import {
   applyGroupingPlan,
   captureUndoSnapshot,
   closeDisposableTabsInWindow,
+  discardInactiveTabsInWindow,
   getCurrentWindowTabGroups,
   getCurrentWindowTabs,
   hasUngroupedGroupableWebTabs,
@@ -82,6 +83,10 @@ async function executeQuickPrismSort(): Promise<void> {
       collapseInactiveGroups: settings.collapseOthersOnGroup,
       staggerMs: 28,
     });
+
+    if (settings.discardInactiveTabs) {
+      await discardInactiveTabsInWindow();
+    }
   }
 
   if (shouldCleanup) {

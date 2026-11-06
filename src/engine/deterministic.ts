@@ -300,6 +300,20 @@ const KNOWN_BRAND_NAMES: Record<
   'vercel.com': { label: 'Vercel', emoji: '▲', color: 'cyan' },
   'aws.amazon.com': { label: 'AWS', emoji: '☁️', color: 'orange' },
   'console.cloud.google.com': { label: 'GCP', emoji: '☁️', color: 'blue' },
+  'x.com': { label: 'X (Twitter)', emoji: '🐦', color: 'blue' },
+  'twitter.com': { label: 'X (Twitter)', emoji: '🐦', color: 'blue' },
+  'chatgpt.com': { label: 'ChatGPT', emoji: '🤖', color: 'green' },
+  'chat.openai.com': { label: 'ChatGPT', emoji: '🤖', color: 'green' },
+  'claude.ai': { label: 'Claude', emoji: '🧡', color: 'orange' },
+  'telegram.org': { label: 'Telegram', emoji: '✈️', color: 'cyan' },
+  'web.telegram.org': { label: 'Telegram', emoji: '✈️', color: 'cyan' },
+  'medium.com': { label: 'Medium', emoji: '📝', color: 'grey' },
+  'habr.com': { label: 'Habr', emoji: '🤓', color: 'cyan' },
+  'vk.com': { label: 'VK', emoji: '🔵', color: 'blue' },
+  'wildberries.ru': { label: 'Shopping', emoji: '🛍️', color: 'purple' },
+  'ozon.ru': { label: 'Shopping', emoji: '🛍️', color: 'blue' },
+  'aliexpress.com': { label: 'AliExpress', emoji: '🛍️', color: 'orange' },
+  'aliexpress.ru': { label: 'AliExpress', emoji: '🛍️', color: 'orange' },
   localhost: { label: 'Local Dev', emoji: '🛠️', color: 'green' },
   '127.0.0.1': { label: 'Local Dev', emoji: '🛠️', color: 'green' },
 };
@@ -399,13 +413,14 @@ export function parseExistingGroupTitle(rawTitle: string): {
     return { cleanTitle: '' };
   }
   const match =
-    /^(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)\s+(.*)$/u.exec(
+    /^(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)\s*(.*)$/u.exec(
       trimmed
     );
   if (match) {
+    const clean = match[2].trim();
     return {
       emoji: match[1],
-      cleanTitle: match[2].trim(),
+      cleanTitle: clean || match[1],
     };
   }
   return { cleanTitle: trimmed };
@@ -706,16 +721,17 @@ function inferEmojiFromDomain(domain: string): string {
 
 function inferHarmoniousEmojiForTopic(words: string[]): string {
   const joined = words.join(' ').toLowerCase();
-  if (/(shader|webgpu|gpu|render|graphics|canvas)/.test(joined)) return '⚡';
-  if (/(auth|oauth|jwt|security|token|login)/.test(joined)) return '🔐';
-  if (/(kubernetes|docker|deploy|aws|cloud|infra|ingress|terraform)/.test(joined))
+  if (/(shader|webgpu|gpu|render|graphics|canvas|шейдер|графика)/i.test(joined)) return '⚡';
+  if (/(auth|oauth|jwt|security|token|login|безопасность|авторизация|пароль)/i.test(joined)) return '🔐';
+  if (/(kubernetes|docker|deploy|aws|cloud|infra|ingress|terraform|сервер|деплой|инфраструктура)/i.test(joined))
     return '☁️';
-  if (/(react|vite|typescript|rust|python|node|api|code|bug)/.test(joined))
+  if (/(react|vite|typescript|rust|python|node|api|code|bug|разработка|код|программирование|ошибка)/i.test(joined))
     return '🛠️';
-  if (/(research|guide|benchmark|paper|study|docs|spec)/.test(joined)) return '📘';
-  if (/(design|figma|ui|ux|css|animation|layout)/.test(joined)) return '🎨';
-  if (/(buy|price|review|keyboard|gift|shop)/.test(joined)) return '🛍️';
-  if (/(music|video|podcast|stream|song)/.test(joined)) return '🎧';
+  if (/(research|guide|benchmark|paper|study|docs|spec|статья|гайд|документация|исследование|руководство)/i.test(joined)) return '📘';
+  if (/(design|figma|ui|ux|css|animation|layout|дизайн|верстка|анимация|макет)/i.test(joined)) return '🎨';
+  if (/(buy|price|review|keyboard|gift|shop|купить|цена|скидки|заказ|магазин|корзина)/i.test(joined)) return '🛍️';
+  if (/(music|video|podcast|stream|song|музыка|видео|клип|фильм|трек|песня|подкаст)/i.test(joined)) return '🎧';
+  if (/(game|gaming|steam|play|игра|игры|гейминг)/i.test(joined)) return '🎮';
   return '✨';
 }
 
@@ -1623,8 +1639,10 @@ export function runDeterministicGrouping(
   // Stage 5: Contextual Research Chain Linking
   // If a singleton article shares contextual affinity (openerTabId OR search query keywords + proximity)
   // with the `Research & Search` group (or an established group), attach it to that research workflow!
-  const researchGroup = newGroups.find(
-    (g) => g.id === 'logic-platform-search-research-and-search'
+  const researchGroup = [...preservedGroups, ...newGroups].find(
+    (g) =>
+      g.id === 'logic-platform-search-research-and-search' ||
+      g.groupName === 'Research & Search'
   );
   if (researchGroup) {
     const searchMemberTabs = researchGroup.tabIds
@@ -1641,7 +1659,12 @@ export function runDeterministicGrouping(
       );
 
       if (matchesResearchChain) {
-        researchGroup.tabIds.push(tabId);
+        if (!researchGroup.tabIds.includes(tabId)) {
+          researchGroup.tabIds.push(tabId);
+        }
+        if (researchGroup.addedTabIds && !researchGroup.addedTabIds.includes(tabId)) {
+          researchGroup.addedTabIds.push(tabId);
+        }
         researchGroup.source = 'context-chain';
         tabToGroupMap.set(tabId, researchGroup);
         singletonBuckets.delete(tabId);

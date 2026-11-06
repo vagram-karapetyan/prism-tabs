@@ -185,6 +185,28 @@ export interface PrismSettings {
   closeEmptyTabs: boolean;
   /** Automatically close unpinned YouTube homepage tabs (https://www.youtube.com/) during grouping */
   closeYouTubeHomeTabs: boolean;
+  /** Discard background tab memory for inactive grouped tabs via chrome.tabs.discard (default: false) */
+  discardInactiveTabs?: boolean;
   deterministicOptions: DeterministicOptions;
   customRules: DeterministicRule[];
+}
+
+export interface PrismExportConfig {
+  version: 1;
+  exportedAt: string;
+  theme?: PrismThemeId;
+  mode?: EngineMode;
+  aiProvider?: AiProvider;
+  groqModel?: GroqModelId;
+  geminiModel?: GeminiModelId;
+  customBaseUrl?: string;
+  customModel?: string;
+  customPromptDirective?: string;
+  promptPresets?: CustomPromptPreset[];
+  collapseOthersOnGroup?: boolean;
+  closeEmptyTabs?: boolean;
+  closeYouTubeHomeTabs?: boolean;
+  discardInactiveTabs?: boolean;
+  deterministicOptions?: DeterministicOptions;
+  customRules?: DeterministicRule[];
 }

@@ -129,7 +129,6 @@ export function resolveEffectiveThemeId(
   return 'prism-deep';
 }
 
-
 /**
  * Applies the selected theme to the root HTML document and updates CSS variables & color-scheme.
  */
@@ -174,11 +173,12 @@ export function applyPrismTheme(themeId: PrismThemeId = 'prism-deep'): void {
 
   // Cache theme attributes in localStorage for instant synchronous initialization on next popup launch
   try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('prism_theme_id', themeId);
-      localStorage.setItem('prism_theme_effective', def.id);
-      localStorage.setItem('prism_theme_bg', def.colors.bg);
-      localStorage.setItem('prism_theme_mode', def.mode);
+    const local = typeof window !== 'undefined' ? window.localStorage : null;
+    if (local) {
+      local.setItem('prism_theme_id', themeId);
+      local.setItem('prism_theme_effective', def.id);
+      local.setItem('prism_theme_bg', def.colors.bg);
+      local.setItem('prism_theme_mode', def.mode);
     }
   } catch {
     // Ignore storage errors in restricted contexts

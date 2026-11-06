@@ -1,4 +1,4 @@
-import { extractDomainInfo } from '../engine/deterministic';
+import { extractDomainInfo, parseExistingGroupTitle } from '../engine/deterministic';
 import {
   ChromeTabGroupColor,
   ExistingTabGroup,
@@ -330,18 +330,14 @@ export async function getCurrentWindowTabGroups(
     return rawGroups.map((g) => {
       const tabIds = tabsByGroupId.get(g.id) ?? [];
       const rawTitle = g.title || '';
-      const emojiMatch = rawTitle.match(
-        /^(\p{Extended_Pictographic}|\p{Emoji_Presentation})\s*/u
-      );
-      const cleanTitle = emojiMatch
-        ? rawTitle.slice(emojiMatch[0].length).trim()
-        : rawTitle.trim();
+      const parsed = parseExistingGroupTitle(rawTitle);
+      const cleanTitle = parsed.cleanTitle || 'Group';
 
       return {
         id: g.id,
         title: rawTitle,
         cleanTitle: cleanTitle || rawTitle || 'Group',
-        emoji: emojiMatch ? emojiMatch[1] : undefined,
+        emoji: parsed.emoji,
         color: (g.color as ChromeTabGroupColor) || 'grey',
         collapsed: Boolean(g.collapsed),
         tabIds,
@@ -663,10 +659,18 @@ export async function applyGroupingPlan(
             group.tabIds.includes(id)
           );
           if (newTabs.length > 0) {
-            await chrome.tabs.group({
-              groupId: chromeGroupId,
-              tabIds: newTabs,
-            });
+            try {
+              await chrome.tabs.group({
+                groupId: chromeGroupId,
+                tabIds: newTabs,
+              });
+            } catch {
+              // Existing group may have been dissolved outside popup; fallback to grouping all
+              chromeGroupId = await chrome.tabs.group({
+                tabIds: group.tabIds,
+              });
+              group.existingGroupId = chromeGroupId;
+            }
           }
         } else {
           chromeGroupId = await chrome.tabs.group({
@@ -708,3 +712,80 @@ export async function applyGroupingPlan(
 
   updateProgress(null, null, 'complete');
 }
+
+/**
+ * Discards inactive background tabs to reclaim memory without closing them.
+ * Never discards the active tab, pinned tabs, or tabs currently playing audio.
+ */
+export async function discardInactiveTabsInWindow(
+  targetTabIds?: number[]
+): Promise<number> {
+  if (!isChromeTabsAvailable() || typeof chrome.tabs.discard !== 'function') {
+    return 0;
+  }
+
+  try {
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    const targetSet = targetTabIds ? new Set(targetTabIds) : null;
+    let discardedCount = 0;
+
+    for (const tab of tabs) {
+      if (
+        typeof tab.id === 'number' &&
+        !tab.active &&
+        !tab.pinned &&
+        !tab.audible &&
+        !tab.discarded &&
+        (!targetSet || targetSet.has(tab.id))
+      ) {
+        try {
+          await chrome.tabs.discard(tab.id);
+          discardedCount++;
+        } catch {
+          // Tab may not be discardable or was already closed
+        }
+      }
+    }
+    return discardedCount;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Computes an estimated memory savings (in MB) from closed tabs, discarded tabs, and collapsed groups.
+ */
+export function estimateMemorySavings(
+  closedTabsCount: number,
+  discardedTabsCount: number = 0,
+  collapsedGroupsCount: number = 0
+): number {
+  return Math.round(
+    closedTabsCount * 45 + discardedTabsCount * 55 + collapsedGroupsCount * 10
+  );
+}
+
+/**
+ * Moves a tab into a target Chrome Tab Group (used by drag-and-drop reorganization).
+ */
+export async function moveTabToGroup(
+  tabId: number,
+  targetGroupId: number
+): Promise<void> {
+  if (!isChromeTabsAvailable() || !isChromeTabGroupsAvailable()) {
+    demoTabState = demoTabState.map((t) =>
+      t.id === tabId ? { ...t, groupId: targetGroupId } : t
+    );
+    return;
+  }
+
+  try {
+    await chrome.tabs.group({
+      groupId: targetGroupId,
+      tabIds: [tabId],
+    });
+  } catch {
+    // Target group might not exist or tab was closed
+  }
+}
+

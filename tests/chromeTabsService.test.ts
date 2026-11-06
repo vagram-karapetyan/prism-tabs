@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   applyGroupingPlan,
+  discardInactiveTabsInWindow,
+  estimateMemorySavings,
+  moveTabToGroup,
   captureUndoSnapshot,
   closeDisposableTabsInWindow,
   getCurrentWindowTabGroups,
@@ -184,5 +187,24 @@ describe('Chrome Tabs Service — Undo Snapshot & Tab Operations', () => {
     });
     expect(closed).toBeGreaterThanOrEqual(0);
   });
-});
+  it('estimates memory savings accurately for closed tabs, discarded tabs and collapsed groups', () => {
+    // 2 closed tabs (2*45=90) + 3 discarded tabs (3*55=165) + 1 collapsed group (1*10=10) = 265 MB
+    const savings = estimateMemorySavings(2, 3, 1);
+    expect(savings).toBe(265);
 
+    expect(estimateMemorySavings(0, 0, 0)).toBe(0);
+    expect(estimateMemorySavings(1)).toBe(45);
+  });
+
+  it('moves a tab into another group via moveTabToGroup', async () => {
+    await moveTabToGroup(103, 1);
+    const tabs = await getCurrentWindowTabs();
+    const tab103 = tabs.find((t) => t.id === 103);
+    expect(tab103?.groupId).toBe(1);
+  });
+
+  it('safely calls discardInactiveTabsInWindow without error in mock or chrome runtime', async () => {
+    const discarded = await discardInactiveTabsInWindow([101, 102]);
+    expect(discarded).toBeGreaterThanOrEqual(0);
+  });
+});

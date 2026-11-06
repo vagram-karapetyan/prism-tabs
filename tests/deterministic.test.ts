@@ -10,7 +10,9 @@ import {
   extractDomainInfo,
   extractPlatformCluster,
   extractTicketIdentifiers,
+  formatDomainGroupMeta,
   matchesRule,
+  parseExistingGroupTitle,
   runDeterministicGrouping,
   synthesizeHumanGroupTitle,
 } from '../src/engine/deterministic';
@@ -520,5 +522,73 @@ describe('Deterministic Engine — Color Harmony Allocator & Regex Rules', () =>
     expect(() => matchesRule(sampleTab, invalidRule)).not.toThrow();
     expect(matchesRule(sampleTab, invalidRule)).toBe(false);
     expect(CHROME_TAB_GROUP_COLORS).toContain(deterministicColorForKey('github.com'));
+  });
+  it('parses existing group titles with compound emojis, zero-whitespace, or emoji-only cleanly', () => {
+    // Standard with space
+    expect(parseExistingGroupTitle('📁 Work')).toEqual({ emoji: '📁', cleanTitle: 'Work' });
+    // Zero-whitespace
+    expect(parseExistingGroupTitle('📁Work')).toEqual({ emoji: '📁', cleanTitle: 'Work' });
+    // Compound emoji with zero or more space
+    expect(parseExistingGroupTitle('👨‍💻 Dev')).toEqual({ emoji: '👨‍💻', cleanTitle: 'Dev' });
+    expect(parseExistingGroupTitle('👨‍💻Dev')).toEqual({ emoji: '👨‍💻', cleanTitle: 'Dev' });
+    // Emoji-only
+    expect(parseExistingGroupTitle('📁')).toEqual({ emoji: '📁', cleanTitle: '📁' });
+    // Plain text without emoji
+    expect(parseExistingGroupTitle('Research')).toEqual({ cleanTitle: 'Research' });
+  });
+
+  it('recognizes expanded brands (ChatGPT, Claude, X/Twitter, Habr, Ozon, Telegram)', () => {
+    const chatgpt = extractDomainInfo('https://chatgpt.com/c/12345');
+    const claude = extractDomainInfo('https://claude.ai/chat/67890');
+    const twitter = extractDomainInfo('https://x.com/antigravity');
+    const habr = extractDomainInfo('https://habr.com/ru/articles/12345/');
+    const ozon = extractDomainInfo('https://www.ozon.ru/category/smartfony-15502/');
+    const tg = extractDomainInfo('https://web.telegram.org/a/');
+
+    expect(formatDomainGroupMeta(chatgpt.rootDomain).groupName).toBe('ChatGPT');
+    expect(formatDomainGroupMeta(claude.rootDomain).groupName).toBe('Claude');
+    expect(formatDomainGroupMeta(twitter.rootDomain).groupName).toBe('X (Twitter)');
+    expect(formatDomainGroupMeta(habr.rootDomain).groupName).toBe('Habr');
+    expect(formatDomainGroupMeta(ozon.rootDomain).groupName).toBe('Shopping');
+    expect(formatDomainGroupMeta(tg.rootDomain).groupName).toBe('Telegram');
+  });
+
+  it('attaches research tabs to Research & Search group when it is already in preserved existing groups', () => {
+    const now = Date.now();
+    const existingSearchGroup: ExistingTabGroup = {
+      id: 55,
+      title: '🔍 Research & Search',
+      cleanTitle: 'Research & Search',
+      emoji: '🔍',
+      color: 'cyan',
+      collapsed: false,
+      tabIds: [1],
+    };
+
+    const tabs: TabMetadata[] = [
+      {
+        id: 1,
+        title: 'rust async traits - Google Search',
+        url: 'https://www.google.com/search?q=rust+async+traits',
+        groupId: 55,
+        index: 0,
+        lastAccessed: now,
+      },
+      {
+        id: 2,
+        title: 'Deep Dive into Async Traits in Rust',
+        url: 'https://smallcultfollowing.com/babysteps/blog/async-traits',
+        index: 1,
+        lastAccessed: now + 5000,
+      },
+    ];
+
+    const plan = runDeterministicGrouping(tabs, undefined, { ...DEFAULT_DETERMINISTIC_OPTIONS, preserveExistingGroups: true }, [existingSearchGroup]);
+    const matched = plan.groups.find((g) => g.existingGroupId === 55);
+
+    expect(matched).toBeDefined();
+    expect(matched?.tabIds).toContain(1);
+    expect(matched?.tabIds).toContain(2);
+    expect(matched?.addedTabIds).toContain(2);
   });
 });

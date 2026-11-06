@@ -3,7 +3,11 @@ import {
   DEFAULT_DETERMINISTIC_RULES,
 } from '../engine/deterministic';
 import { DEFAULT_PROMPT_PRESETS } from '../engine/semantic';
-import { AiProvider, PrismSettings } from '../engine/types';
+import {
+  AiProvider,
+  PrismExportConfig,
+  PrismSettings,
+} from '../engine/types';
 
 /**
  * Reads `VITE_GROQ_API_KEY` from `.env.local` if available during build/dev initialization.
@@ -34,6 +38,7 @@ export const DEFAULT_PRISM_SETTINGS: PrismSettings = {
   collapseOthersOnGroup: true,
   closeEmptyTabs: true,
   closeYouTubeHomeTabs: false,
+  discardInactiveTabs: false,
   deterministicOptions: DEFAULT_DETERMINISTIC_OPTIONS,
   customRules: DEFAULT_DETERMINISTIC_RULES,
 };
@@ -84,13 +89,29 @@ function isStorageAvailable(): boolean {
   );
 }
 
+/**
+ * Safely accesses window.localStorage in browser runtime without triggering
+ * Node 22's experimental globalThis.localStorage warning during unit tests.
+ */
+export function getBrowserLocalStorage(): Storage | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 async function rawGet<T>(key: string): Promise<T | undefined> {
   if (isStorageAvailable()) {
     const res = await chrome.storage.local.get(key);
     return res[key] as T | undefined;
   }
-  if (typeof localStorage !== 'undefined') {
-    const val = localStorage.getItem(key);
+  const local = getBrowserLocalStorage();
+  if (local) {
+    const val = local.getItem(key);
     if (!val) return undefined;
     try {
       return JSON.parse(val) as T;
@@ -106,8 +127,9 @@ async function rawSet<T>(key: string, value: T): Promise<void> {
     await chrome.storage.local.set({ [key]: value });
     return;
   }
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(key, JSON.stringify(value));
+  const local = getBrowserLocalStorage();
+  if (local) {
+    local.setItem(key, JSON.stringify(value));
     return;
   }
   memoryFallback.set(key, value);
@@ -118,8 +140,9 @@ async function rawRemove(key: string): Promise<void> {
     await chrome.storage.local.remove(key);
     return;
   }
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem(key);
+  const local = getBrowserLocalStorage();
+  if (local) {
+    local.removeItem(key);
     return;
   }
   memoryFallback.delete(key);
@@ -148,6 +171,7 @@ export async function loadSettings(): Promise<PrismSettings> {
     groqApiKey: resolvedGroqKey,
     closeEmptyTabs: stored.closeEmptyTabs ?? true,
     closeYouTubeHomeTabs: stored.closeYouTubeHomeTabs ?? false,
+    discardInactiveTabs: stored.discardInactiveTabs ?? false,
     deterministicOptions: {
       ...DEFAULT_DETERMINISTIC_OPTIONS,
       ...(stored.deterministicOptions ?? {}),
@@ -220,4 +244,122 @@ export async function saveLastUndoSnapshot(
 
 export async function clearLastUndoSnapshot(): Promise<void> {
   await rawRemove(UNDO_SNAPSHOT_STORAGE_KEY);
+}
+
+/**
+ * Creates a clean JSON export object of the user's Prism configuration.
+ * Intentionally excludes raw private API keys for security and privacy.
+ */
+export function exportPrismConfig(settings: PrismSettings): PrismExportConfig {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    theme: settings.theme,
+    mode: settings.mode,
+    aiProvider: settings.aiProvider,
+    groqModel: settings.groqModel,
+    geminiModel: settings.geminiModel,
+    customBaseUrl: settings.customBaseUrl,
+    customModel: settings.customModel,
+    customPromptDirective: settings.customPromptDirective,
+    promptPresets: settings.promptPresets,
+    collapseOthersOnGroup: settings.collapseOthersOnGroup,
+    closeEmptyTabs: settings.closeEmptyTabs,
+    closeYouTubeHomeTabs: settings.closeYouTubeHomeTabs,
+    discardInactiveTabs: settings.discardInactiveTabs,
+    deterministicOptions: settings.deterministicOptions,
+    customRules: settings.customRules,
+  };
+}
+
+/**
+ * Validates and imports a JSON configuration file, merging rules, presets, and behavior settings
+ * safely into storage without breaking or clobbering existing API keys.
+ */
+export async function importPrismConfig(
+  jsonContent: string
+): Promise<{ success: boolean; message: string; settings?: PrismSettings }> {
+  try {
+    const raw = JSON.parse(jsonContent) as Partial<PrismExportConfig>;
+    if (!raw || typeof raw !== 'object') {
+      return { success: false, message: 'Invalid configuration file: not a JSON object.' };
+    }
+
+    const updates: Partial<PrismSettings> = {};
+
+    if (raw.theme && typeof raw.theme === 'string') {
+      updates.theme = raw.theme;
+    }
+    if (raw.mode === 'logic' || raw.mode === 'meaning') {
+      updates.mode = raw.mode;
+    }
+    if (raw.aiProvider === 'groq' || raw.aiProvider === 'gemini' || raw.aiProvider === 'custom') {
+      updates.aiProvider = raw.aiProvider;
+    }
+    if (typeof raw.groqModel === 'string') updates.groqModel = raw.groqModel;
+    if (typeof raw.geminiModel === 'string') updates.geminiModel = raw.geminiModel;
+    if (typeof raw.customBaseUrl === 'string') updates.customBaseUrl = raw.customBaseUrl;
+    if (typeof raw.customModel === 'string') updates.customModel = raw.customModel;
+    if (typeof raw.customPromptDirective === 'string') {
+      updates.customPromptDirective = raw.customPromptDirective;
+    }
+
+    if (Array.isArray(raw.promptPresets)) {
+      const validPresets = raw.promptPresets.filter(
+        (p) => p && typeof p.id === 'string' && typeof p.label === 'string' && typeof p.directive === 'string'
+      );
+      if (validPresets.length > 0) {
+        updates.promptPresets = validPresets;
+      }
+    }
+
+    if (typeof raw.collapseOthersOnGroup === 'boolean') {
+      updates.collapseOthersOnGroup = raw.collapseOthersOnGroup;
+    }
+    if (typeof raw.closeEmptyTabs === 'boolean') {
+      updates.closeEmptyTabs = raw.closeEmptyTabs;
+    }
+    if (typeof raw.closeYouTubeHomeTabs === 'boolean') {
+      updates.closeYouTubeHomeTabs = raw.closeYouTubeHomeTabs;
+    }
+    if (typeof raw.discardInactiveTabs === 'boolean') {
+      updates.discardInactiveTabs = raw.discardInactiveTabs;
+    }
+
+    if (raw.deterministicOptions && typeof raw.deterministicOptions === 'object') {
+      updates.deterministicOptions = {
+        ...DEFAULT_DETERMINISTIC_OPTIONS,
+        ...raw.deterministicOptions,
+      };
+    }
+
+    if (Array.isArray(raw.customRules)) {
+      const validRules = raw.customRules.filter(
+        (r) =>
+          r &&
+          typeof r.id === 'string' &&
+          typeof r.name === 'string' &&
+          typeof r.pattern === 'string' &&
+          typeof r.color === 'string'
+      );
+      if (validRules.length > 0) {
+        updates.customRules = validRules;
+      }
+    }
+
+    const saved = await saveSettings(updates);
+    const ruleCount = updates.customRules?.length ?? 0;
+    const presetCount = updates.promptPresets?.length ?? 0;
+
+    return {
+      success: true,
+      message: `Imported config successfully (${ruleCount} rules, ${presetCount} presets)`,
+      settings: saved,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : 'Failed to parse configuration file',
+    };
+  }
 }

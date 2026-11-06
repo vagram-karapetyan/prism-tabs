@@ -21,6 +21,9 @@ import {
   applyGroupingPlan,
   captureUndoSnapshot,
   closeDisposableTabsInWindow,
+  discardInactiveTabsInWindow,
+  estimateMemorySavings,
+  moveTabToGroup,
   getCurrentWindowTabGroups,
   getCurrentWindowTabs,
   hasUngroupedGroupableWebTabs,
@@ -33,6 +36,8 @@ import {
 import { geminiClient } from '../services/geminiService';
 import {
   clearLastUndoSnapshot,
+  exportPrismConfig,
+  importPrismConfig,
   DEFAULT_PRISM_SETTINGS,
   getActiveProviderConfig,
   loadLastUndoSnapshot,
@@ -358,12 +363,25 @@ export const App: React.FC = () => {
       setExistingGroups(refreshedGroups);
       setPlan({ ...computedPlan, groups: [...computedPlan.groups] });
 
-      if (closedCount > 0) {
-        showToast(
-          `Closed ${closedCount} leftover ${
-            closedCount === 1 ? 'tab' : 'tabs'
-          } & grouped ${computedPlan.groups.length} clusters`
-        );
+      let discardedCount = 0;
+      if (latestSettings.discardInactiveTabs) {
+        discardedCount = await discardInactiveTabsInWindow();
+      }
+
+      const memorySaved = estimateMemorySavings(
+        closedCount,
+        discardedCount,
+        computedPlan.groups.length
+      );
+
+      if (memorySaved > 0) {
+        const parts: string[] = [];
+        if (closedCount > 0) parts.push(`closed ${closedCount}`);
+        if (discardedCount > 0) parts.push(`suspended ${discardedCount}`);
+        parts.push(`saved ~${memorySaved}MB RAM`);
+        showToast(`Grouped ${computedPlan.groups.length} clusters (${parts.join(', ')})`);
+      } else {
+        showToast(`Grouped ${computedPlan.groups.length} clusters`);
       }
 
       setSortDoneSuccess(true);
@@ -417,6 +435,91 @@ export const App: React.FC = () => {
       };
     });
   }, []);
+
+    const handleMoveTab = useCallback(
+    async (tabId: number, sourceGroupId: string, targetGroupId: string) => {
+      setPlan((prev) => {
+        if (!prev) return prev;
+        const sourceGroup = prev.groups.find((g) => g.id === sourceGroupId);
+        const targetGroup = prev.groups.find((g) => g.id === targetGroupId);
+        if (!sourceGroup || !targetGroup) return prev;
+
+        const nextGroups = prev.groups
+          .map((g) => {
+            if (g.id === sourceGroupId) {
+              return {
+                ...g,
+                tabIds: g.tabIds.filter((id) => id !== tabId),
+              };
+            }
+            if (g.id === targetGroupId) {
+              return {
+                ...g,
+                tabIds: g.tabIds.includes(tabId) ? g.tabIds : [...g.tabIds, tabId],
+              };
+            }
+            return g;
+          })
+          .filter((g) => g.tabIds.length > 0);
+
+        if (typeof targetGroup.existingGroupId === 'number') {
+          void moveTabToGroup(tabId, targetGroup.existingGroupId);
+        }
+
+        return {
+          ...prev,
+          groups: nextGroups,
+        };
+      });
+
+      const tab = tabsById.get(tabId);
+      const targetGroup = plan?.groups.find((g) => g.id === targetGroupId);
+      if (tab && targetGroup) {
+        showToast(`Moved tab to ${targetGroup.groupName}`);
+      }
+    },
+    [tabsById, plan, showToast]
+  );
+
+  const handleExportConfig = useCallback(() => {
+    const config = exportPrismConfig(settings);
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prism-tabs-config-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Exported config to JSON');
+  }, [settings, showToast]);
+
+  const handleImportFile = useCallback(
+    async (file: File) => {
+      try {
+        const text = await file.text();
+        const result = await importPrismConfig(text);
+        if (result.success && result.settings) {
+          setSettings(result.settings);
+          applyPrismTheme(result.settings.theme || 'prism-deep');
+          if (result.settings.mode === 'logic') {
+            setPlan(computeLogicPlanForWindow(tabs, result.settings, existingGroups));
+          }
+          showToast(result.message);
+        } else {
+          setErrorBanner(result.message);
+        }
+      } catch (err) {
+        setErrorBanner(
+          err instanceof Error ? err.message : 'Failed to read configuration file.'
+        );
+      }
+    },
+    [tabs, existingGroups, computeLogicPlanForWindow, showToast]
+  );
 
   const handleUngroupAll = useCallback(async () => {
     try {
@@ -479,6 +582,19 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement | null)?.isContentEditable;
+
+      if (e.key === 'Escape') {
+        if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (isInput) return;
+
       if (e.altKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         void handlePrismSort();
@@ -486,8 +602,7 @@ export const App: React.FC = () => {
         e.preventDefault();
         void handleUngroupAll();
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        const tag = (e.target as HTMLElement | null)?.tagName;
-        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && undoSnapshot) {
+        if (undoSnapshot) {
           e.preventDefault();
           void handleUndo();
         }
@@ -495,7 +610,7 @@ export const App: React.FC = () => {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handlePrismSort, handleUngroupAll, handleUndo, undoSnapshot]);
+  }, [handlePrismSort, handleUngroupAll, handleUndo, undoSnapshot, isSettingsOpen]);
 
   const providerLabel =
     settings.aiProvider === 'groq'
@@ -646,6 +761,25 @@ export const App: React.FC = () => {
                 className="rounded accent-indigo-500 cursor-pointer"
               />
             </label>
+
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-slate-700 dark:text-slate-200 border-t border-slate-200 dark:border-slate-800/70 pt-1.5">
+              <span className="flex items-center gap-1.5">
+                <span>Discard background tabs (Free RAM)</span>
+                <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                  save ~55MB/tab
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={Boolean(settings.discardInactiveTabs)}
+                onChange={(e) =>
+                  handleUpdateSettings({
+                    discardInactiveTabs: e.target.checked,
+                  })
+                }
+                className="rounded accent-emerald-500 cursor-pointer"
+              />
+            </label>
           </div>
 
           {/* Sub-Tabs for Themes vs. AI Setup vs. Logic Rules */}
@@ -711,6 +845,8 @@ export const App: React.FC = () => {
                   },
                 })
               }
+              onExportConfig={handleExportConfig}
+              onImportFile={handleImportFile}
             />
           )}
         </div>
@@ -772,6 +908,7 @@ export const App: React.FC = () => {
               choreography={choreography}
               onUpdateGroup={handleUpdateGroupInPlan}
               onRemoveGroup={handleRemoveGroupFromPlan}
+              onMoveTab={handleMoveTab}
             />
           </main>
         </>

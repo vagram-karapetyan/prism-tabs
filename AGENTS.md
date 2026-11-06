@@ -14,7 +14,7 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 - **Framework & UI**: React 18, TypeScript 5.6 (strict mode), Tailwind CSS (`darkMode: 'class'`), Lucide React.
 - **Build Tool**: Vite 5 (`vite build`), generating bundle into `dist/`.
 - **Target Platform**: Google Chrome / Chromium Manifest V3 (`chrome.tabGroups`, `chrome.tabs`, `chrome.storage.local`).
-- **Test Runner**: Vitest (59/59 unit tests passing).
+- **Test Runner**: Vitest (66/66 unit tests passing across 5 suites).
 
 ---
 
@@ -23,14 +23,53 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 > [!IMPORTANT]
 > **Windows OS Note**: On this Windows machine, running `npm` directly in PowerShell can hit execution policy restrictions (`PSSecurityException`). Always execute npm commands through `cmd.exe /c`:
 > - Run tests: `cmd.exe /c npm test`
+> - Typecheck: `cmd.exe /c npm run typecheck`
 > - Build project (dev/local with .env.local): `cmd.exe /c npm run build`
 > - Package clean BYOK release (zero keys, creates .zip in releases/): `cmd.exe /c npm run package`
 > - Dev server (if needed): `cmd.exe /c npm run dev`
 
 ### Verification Workflow for Any Changes
-1. Run unit test suite: `cmd.exe /c npm test` (all 59 tests must pass).
-2. Build extension bundle: `cmd.exe /c npm run build` (always ensure `dist/` is updated and in sync before committing).
-3. Check Git status: `git status`.
+1. Run unit test suite: `cmd.exe /c npm test` (all 66 tests must pass).
+2. Run typecheck: `cmd.exe /c npm run typecheck` (0 errors in strict mode).
+3. Build extension bundle: `cmd.exe /c npm run build` (always ensure `dist/` is updated and in sync before committing).
+4. Run clean packaging & secret audit: `cmd.exe /c npm run package` (verifies 0 personal keys in releases).
+5. Check Git status: `git status`.
+
+---
+
+## 🌐 Everything Claude Code (ECC) Engineering Protocols
+
+When working on this codebase, all AI agents must follow the core ECC standards and map tasks to corresponding engineering workflows:
+
+### 1. Defect Resolution (`orch-fix-defect`, `tdd-workflow`)
+- Identify and isolate root causes prior to making code edits.
+- Reproduce the bug with an automated unit test in `tests/`.
+- Apply minimal, surgical fixes without collateral damage or code bloat.
+- Verify that all related test suites remain green.
+
+### 2. Feature Development (`orch-add-feature`, `react-patterns`)
+- Design typed contracts and interfaces in `src/engine/types.ts` before writing UI or logic.
+- Maintain strict unidirectional data flow: storage layer (`storageService.ts`) $\rightarrow$ services (`chromeTabsService.ts`, `geminiService.ts`) $\rightarrow$ engine logic $\rightarrow$ UI components.
+- Avoid state mutation anti-patterns; use idiomatic React hooks (`useCallback`, `useMemo`, `useState`).
+
+### 3. User Interface & Ergonomics (`make-interfaces-feel-better`, `frontend-patterns`)
+- **Hit targets & padding**: Ensure clickable controls are $\ge 32\text{px}$ in popup windows with clear hover and active feedback.
+- **Keyboard navigation**: Support standard shortcuts (`Alt+P` for grouping, `Alt+U` for ungrouping, `Ctrl+Z` for undo, `Esc` to close drawers/swatches and clear search).
+- **Input protection**: Never trigger global shortcuts (like `Alt+P`) when user focus is inside an `<input>` or `<textarea>`.
+- **DPI scaling**: Preserve exact physical dimensions (`392x440px`, multiples of 8) to prevent fractional subpixel rounding gaps on Windows 125%/150% display scaling.
+- **Light/Dark contrast**: Always provide paired Tailwind classes (`text-slate-900 dark:text-slate-100`, etc.) ensuring crisp contrast across all 6 themes.
+
+### 4. Refactoring & Code Quality (`orch-refine-code`, `coding-standards`)
+- Verify all tests pass before initiating structural changes.
+- Preserve public interfaces and behavioral contracts.
+- Eliminate dead code, unused parameters, and runtime warnings (e.g. Node 22 experimental globals).
+
+### 5. Verification Loop (`verification-loop`)
+- **Types**: `cmd.exe /c npm run typecheck` $\rightarrow$ 0 errors.
+- **Tests**: `cmd.exe /c npm test` $\rightarrow$ 100% pass rate.
+- **Build**: `cmd.exe /c npm run build` $\rightarrow$ clean production bundle.
+- **Security**: `cmd.exe /c npm run package` $\rightarrow$ automated secret scan passes with 0 leaks.
+- **Diff**: Review `git diff` for unintended whitespace or accidental modifications.
 
 ---
 
@@ -46,13 +85,13 @@ prism-tabs/
 │   │   └── index.ts                # MV3 background service worker (Alt+P, Alt+U shortcut listeners)
 │   ├── engine/
 │   │   ├── types.ts                # Core types: ProposedTabGroup, GroupingPlan, PrismSettings, Themes
-│   │   ├── deterministic.ts        # 7-stage Logic Mode engine & smart merge logic
+│   │   ├── deterministic.ts        # 8-stage Logic Mode engine, NLP similarity & smart merge
 │   │   └── semantic.ts             # Meaning Mode: prompt building, privacy sanitizer, schema validator
 │   ├── services/
 │   │   ├── geminiService.ts        # Multi-provider client (Groq multi-model fallback, Gemini, Custom API)
-│   │   └── chromeTabsService.ts    # Chrome tab/group CRUD, window isolation, undo manager
+│   │   └── chromeTabsService.ts    # Chrome tab/group CRUD, window isolation, undo manager, memory discard
 │   ├── storage/
-│   │   └── storageService.ts       # Typed persistence layer using chrome.storage.local
+│   │   └── storageService.ts       # Typed persistence layer using chrome.storage.local & config import/export
 │   └── ui/
 │       ├── main.tsx                # SPA entry point & zero-CSP synchronous theme cache loader
 │       ├── App.tsx                 # Main popup UI & unified settings sheet
@@ -62,15 +101,15 @@ prism-tabs/
 │       └── components/
 │           ├── ThemeSelector.tsx           # Visual theme picker with preview dots
 │           ├── PrismRefractionBar.tsx      # Spectral laser prism animation & status
-│           ├── GroupPreviewModal.tsx       # Live group list, color swatch picker & edit controls
-│           ├── RulesDrawer.tsx             # Custom logic rules & heuristics editor
+│           ├── GroupPreviewModal.tsx       # Live group list, instant search, drag & drop, swatch picker
+│           ├── RulesDrawer.tsx             # Custom logic rules, heuristics editor & config import/export
 │           └── SemanticSettingsDrawer.tsx  # Multi-provider API keys & directives configuration
 ├── tests/
-│   ├── deterministic.test.ts       # Logic Mode rules, Jaccard similarity & smart merge
+│   ├── deterministic.test.ts       # Logic Mode rules, Jaccard similarity, brand recognition & smart merge
 │   ├── semantic.test.ts            # Sanitizer, Groq/Gemini calls & fallback safety
 │   ├── cleanup.test.ts             # Disposable tabs (empty New Tab, YouTube homepage)
-│   ├── chromeTabsService.test.ts   # Active-window tabs & UndoSnapshot restoration
-│   └── themes.test.ts              # Theme registry & storage persistence tests
+│   ├── chromeTabsService.test.ts   # Active-window tabs, memory discard & UndoSnapshot restoration
+│   └── themes.test.ts              # Theme registry, config export/import & storage persistence tests
 ├── scripts/
 │   ├── generate-icons.mjs          # SVG to high-res PNG icon rasterizer
 │   └── package-release.mjs         # Clean BYOK release packager & automated secret audit
@@ -103,46 +142,34 @@ prism-tabs/
 
 ---
 
-## ✅ What Has Been Accomplished (v1.1.3)
+## ✅ What Has Been Accomplished (v1.1.4)
 
-1. **Core Dual-Engine Pipeline & Semantic Master Prompt**:
-   - 7-Stage Logic Mode engine with Jaccard NLP clustering, openerTabId trees, and 60+ domain profiles.
-   - Yandex Search vs. Yandex Music differentiation (`music.yandex.ru` -> Media & Audio).
-   - Multi-provider AI engine (Groq LPU with multi-model token scaling rotation, Gemini 2.5 Flash, Custom OpenAI endpoints).
-   - **Unified "Smart Magic" Master Prompt (`preset-magic-smart`)**: Single default preset combining cross-domain project workflows, strict separation of work/personal/shopping, and natural language matching (Russian titles for Russian tabs, English for English).
-   - **Strict YouTube Isolation & Themed Sub-clustering**: YouTube tabs are never mixed with non-YouTube websites; multiple videos sharing a topic form themed groups (e.g. Gaming, Dev/Tech, Music).
-   - **Singleton Tab Suppression**: Eliminates 1-tab clutter by gathering orphan YouTube videos into `🎬 YouTube Разное` and orphan web tabs into `🌐 Разное`.
-   - **Dynamic Storage Preset Migration**: Automatically upgrades legacy default presets in `chrome.storage.local` to the master preset while preserving all user-created custom presets.
-   - Privacy Sanitizer (stripping sensitive params, tokens, and browser-internal URLs before LLM prompts).
-   - Non-destructive **Smart Merge**: ungrouped tabs are merged into existing groups without duplicating.
-   - Automatic empty tab cleanup (`New Tab` / `about:blank`).
-   - Optional automatic closing of YouTube homepage tabs (`youtube.com/`) on grouping.
-   - Active window isolation: operations operate strictly on `currentWindow: true`.
-   - Full 1-click **Undo** (`Ctrl+Z`) and **Ungroup All** (`Alt+U`).
-   - Live inline group editing (rename, color swatch picker, individual cluster dissolution).
-   - **Graceful Fallback & Zero-Waste Routing**: when Gemini or custom AI keys are unconfigured, zero network requests are made; extension immediately falls back to offline Logic Mode (<1ms) with an informative amber banner.
-   - **BYOK Key Seeding**: `.env.local` support (`VITE_GROQ_API_KEY`) safely ignored by Git for dev seeding.
-2. **UI & Theming System**:
-   - **Full-Height Settings View**: Opening Settings hides the Dual-Engine Mode Switcher pill and Tab Action Footer (`Undo`/`Ungroup All`), dedicating 100% of popup height (~376px) to settings with compact behavior toggles, eliminating scrollbar clipping and cut-off inputs.
-   - Dynamic Header: switches to `PRISM | Settings` with a quick `X` (Close) button.
-   - 6 modern color themes (`prism-deep`, `midnight-nebula`, `emerald-forest`, `sunset-amber`, `arctic-frost`, `pure-light`).
-   - Dynamic **System Theme Auto-Detection (`system` mode)** with live listener on OS `prefers-color-scheme` changes.
-   - Visual theme selector (`ThemeSelector.tsx`) with instant persistence in `chrome.storage.local`.
-   - Exact integer DPI scaling constraints (`392x440px`, multiples of 8) eliminating fractional subpixel borders on Windows 125%/150%.
-   - Full Manifest V3 CSP compliance: zero inline `<script>` tags, synchronous theme bootstrap in `main.tsx`.
-   - Complete light-mode contrast audit (PRISM gradient, buttons, inputs, badges).
-   - Animated spectral refraction progress bar with optical prism animation.
-3. **Packaging, Security & Release Canon**:
-   - **Automated Clean BYOK Release Pipeline (`cmd.exe /c npm run package`)**:
-     - Compiles clean distribution bundle via `vite --mode release` into `dist-release/` with all keys stripped to `""`.
-     - Automated secret scanner (`scripts/package-release.mjs`) scans all generated JS/HTML/JSON files with regex for `gsk_` and `AIza` keys to guarantee zero secret leaks.
-     - Generates ready-to-share `releases/prism-tabs-v{version}.zip` (107 KB) and unpacked folder `releases/prism-tabs-v{version}/`.
-     - Strict separation of targets: `dist/` is the developer's personal build (with key), while `releases/` is the public BYOK distribution. Both `dist-release/` and `releases/` are gitignored.
-4. **Automated Testing & Documentation**:
-   - 59 unit tests passing across 5 suites (`tests/`).
-   - Strict TypeScript (`strict: true`) with zero compilation errors.
-   - GitHub Markdown Mermaid diagrams formatted with explicit `<br/>` line wrapping to eliminate text clipping on GitHub.
-   - Clean git history with zero unused artifacts.
+1. **Tab Search Filter in Popup**:
+   - Added instant real-time search input at the top of the group list with a match counter badge.
+   - Filters groups and tabs simultaneously; auto-expands matching groups and highlights query matches.
+   - Closes / clears instantly with `Esc` or the inline `X` button.
+2. **Settings & Rules JSON Import / Export**:
+   - Added "Export" and "Import" buttons in settings: users can backup or transfer custom rules, prompt presets, and behavior settings as JSON without leaking API keys.
+   - Validates JSON structure, recovers gracefully on corrupted files, and updates the UI live.
+3. **HTML5 Drag-and-Drop Tab Reorganization**:
+   - Allows users to drag tabs between groups in `GroupPreviewModal.tsx` before or after grouping.
+   - Moving tabs automatically syncs with native Chrome Tab Groups via `moveTabToGroup`.
+4. **Background Tab Memory Discarding (`chrome.tabs.discard`) & RAM Savings**:
+   - Added `discardInactiveTabs` toggle in Quick Settings.
+   - Automatically unloads background tabs (except active, pinned, or audible tabs) to reclaim ~55MB RAM per tab.
+   - Integrated `estimateMemorySavings` calculating estimated RAM freed (closed tabs + discarded tabs + collapsed groups) and surfaced in toast notifications.
+5. **Deterministic Logic Engine & NLP Enhancements**:
+   - **Resilient Group Merging**: Fixed edge case where dissolved Chrome Tab Groups would cause failed merges; now gracefully falls back to creating fresh groups.
+   - **Preserved Research Group Discovery**: Contextual research linking now checks both preserved and newly created groups.
+   - **Compound Emoji & Title Parsing**: `parseExistingGroupTitle` supports compound emojis (`👨‍💻`, `❤️`, `🏳️‍🌈`) and zero-whitespace titles (e.g. `📁Work`).
+   - **Russian Topic Inference**: Added Russian keywords (`дизайн`, `разработка`, `купить`, `видео`, `статья`, `игры`...) for intelligent topic emoji selection.
+   - **Expanded Domain Profiles**: Added ChatGPT, Claude, X/Twitter, Telegram, Habr, VK, Ozon, Wildberries, AliExpress.
+   - **Language-Aware Fallback Grouping**: Uses `🌐 Разное` when tabs are Russian, avoiding foreign titles on local tabs.
+6. **Keyboard Ergonomics & Node 22 Clean Test Suite**:
+   - Global shortcuts (`Alt+P`, `Alt+U`) are guarded against input/textarea focus.
+   - `Esc` key seamlessly closes Settings and dismisses active color swatch pickers.
+   - Fixed Node 22 `ExperimentalWarning: localStorage` across `storageService.ts` and `themes.ts`.
+   - 66/66 unit tests passing across 5 test suites with 0 warnings.
 
 ---
 
@@ -151,22 +178,16 @@ prism-tabs/
 Future agents picking up this project should prioritize the following:
 
 ### Priority 1: High Value User Features
-- [x] **System Theme Auto-Detection (`system` mode)**:
-  - Added an "Auto / Follow System" theme setting that dynamically chooses `pure-light` when `window.matchMedia('(prefers-color-scheme: light)').matches` is true, and `prism-deep` when dark, with live listener on OS theme changes.
-- [ ] **Settings & Rules JSON Import / Export**:
-  - Add "Export Config" and "Import Config" buttons in settings so users can backup or transfer custom rules and prompt directives.
-- [ ] **Tab Search Filter in Popup**:
-  - Add an inline search bar at the top of the groups preview list to quickly filter tabs in large windows (50+ tabs).
+- [x] **System Theme Auto-Detection (`system` mode)**
+- [x] **Settings & Rules JSON Import / Export**
+- [x] **Tab Search Filter in Popup**
 
 ### Priority 2: Performance & Power Features
-- [ ] **Memory Savings Counter**:
-  - Track and display estimated RAM saved through tab collapse and cleanup.
-- [ ] **Background Tab Memory Discarding (`chrome.tabs.discard`)**:
-  - Provide an optional toggle to freeze/suspend inactive grouped tabs to free up RAM on low-spec PCs.
+- [x] **Memory Savings Counter**
+- [x] **Background Tab Memory Discarding (`chrome.tabs.discard`)**
+- [x] **Drag-and-Drop Reorganization**
 - [ ] **Scheduled / Tab-Count Auto-Grouping**:
   - Optional background alarm (`chrome.alarms`) or threshold trigger (e.g., auto-group when open tabs exceed 25).
-- [ ] **Drag-and-Drop Reorganization**:
-  - Allow users to drag a tab from one group to another directly inside `GroupPreviewModal.tsx`.
 
 ### Priority 3: Store Deployment & Ecosystem
 - [ ] **Microsoft Edge & Brave Support**:

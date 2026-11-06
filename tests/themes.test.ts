@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PRISM_THEMES, THEME_LIST, applyPrismTheme, resolveEffectiveThemeId } from '../src/ui/themes';
-import { DEFAULT_PRISM_SETTINGS, loadSettings, saveSettings } from '../src/storage/storageService';
+import { DEFAULT_PRISM_SETTINGS, exportPrismConfig, importPrismConfig, loadSettings, saveSettings } from '../src/storage/storageService';
 import { ConcreteThemeId } from '../src/engine/types';
 
 describe('Prism Modern Themes System', () => {
@@ -94,7 +94,9 @@ describe('Prism Modern Themes System', () => {
         return null;
       },
     };
-    (global as any).localStorage = mockLocalStorage;
+    (global as any).window = {
+      localStorage: mockLocalStorage,
+    };
 
     try {
       applyPrismTheme('prism-deep');
@@ -112,9 +114,10 @@ describe('Prism Modern Themes System', () => {
       expect(mockLocalStorage.getItem('prism_theme_mode')).toBe('light');
     } finally {
       delete (global as any).document;
-      delete (global as any).localStorage;
+      delete (global as any).window;
     }
   });
+
   it('correctly resolves system theme dynamically via matchMedia', () => {
     // 1. Without matchMedia, defaults to prism-deep
     expect(resolveEffectiveThemeId('system')).toBe('prism-deep');
@@ -154,6 +157,44 @@ describe('Prism Modern Themes System', () => {
     expect(loaded.theme).toBe('system');
 
     // Restore default
+    await saveSettings({ theme: 'prism-deep' });
+  });
+
+  it('exports and imports configuration safely without leaking or overwriting keys', async () => {
+    const current = await loadSettings();
+    const exported = exportPrismConfig(current);
+
+    expect(exported.version).toBe(1);
+    expect(exported.exportedAt).toBeDefined();
+    expect((exported as any).groqApiKey).toBeUndefined();
+    expect((exported as any).geminiApiKey).toBeUndefined();
+    expect(exported.theme).toBe('prism-deep');
+
+    const jsonString = JSON.stringify({
+      version: 1,
+      theme: 'emerald-forest',
+      closeEmptyTabs: true,
+      customRules: [
+        {
+          id: 'imported-rule-1',
+          name: 'Cloud Infrastructure',
+          emoji: '☁️',
+          color: 'cyan',
+          matchTarget: 'hostname',
+          pattern: 'cloud.google.com, aws.amazon.com',
+          isRegex: false,
+          priority: 5,
+          enabled: true,
+        },
+      ],
+    });
+
+    const result = await importPrismConfig(jsonString);
+    expect(result.success).toBe(true);
+    expect(result.settings?.theme).toBe('emerald-forest');
+    expect(result.settings?.customRules.some((r) => r.id === 'imported-rule-1')).toBe(true);
+
+    // Reset back
     await saveSettings({ theme: 'prism-deep' });
   });
 });
