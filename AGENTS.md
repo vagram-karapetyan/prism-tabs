@@ -34,6 +34,8 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 3. Build extension bundle: `cmd.exe /c npm run build` (always ensure `dist/` is updated and in sync before committing).
 4. Run clean packaging & secret audit: `cmd.exe /c npm run package` (verifies 0 personal keys in releases).
 5. Check Git status: `git status`.
+6. **Automatic Git Commit & Push**: Commit with Conventional Commits and push to `origin/main` (`git push origin main`).
+7. **Automatic GitHub Release**: On version updates, publish clean distribution archive to GitHub via `cmd.exe /c npm run release` (tags commit and uploads `.zip` using `gh release create`).
 
 ---
 
@@ -64,11 +66,13 @@ When working on this codebase, all AI agents must follow the core ECC standards 
 - Preserve public interfaces and behavioral contracts.
 - Eliminate dead code, unused parameters, and runtime warnings (e.g. Node 22 experimental globals).
 
-### 5. Verification Loop (`verification-loop`)
+### 5. Verification & Release Loop (`verification-loop`)
 - **Types**: `cmd.exe /c npm run typecheck` $\rightarrow$ 0 errors.
 - **Tests**: `cmd.exe /c npm test` $\rightarrow$ 100% pass rate.
-- **Build**: `cmd.exe /c npm run build` $\rightarrow$ clean production bundle.
-- **Security**: `cmd.exe /c npm run package` $\rightarrow$ automated secret scan passes with 0 leaks.
+- **Build**: `cmd.exe /c npm run build` $\rightarrow$ clean production bundle in `dist/`.
+- **Security & Packaging**: `cmd.exe /c npm run package` $\rightarrow$ automated secret scan passes with 0 leaks & builds clean `.zip`.
+- **Git Commit & Push**: Commit with Conventional Commits and push immediately to `origin/main`.
+- **GitHub Release Automation**: Run `cmd.exe /c npm run release` to automatically publish tag and `.zip` asset to GitHub Releases.
 - **Diff**: Review `git diff` for unintended whitespace or accidental modifications.
 
 ---
