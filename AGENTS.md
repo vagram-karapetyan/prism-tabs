@@ -71,6 +71,9 @@ prism-tabs/
 │   ├── cleanup.test.ts             # Disposable tabs (empty New Tab, YouTube homepage)
 │   ├── chromeTabsService.test.ts   # Active-window tabs & UndoSnapshot restoration
 │   └── themes.test.ts              # Theme registry & storage persistence tests
+├── scripts/
+│   ├── generate-icons.mjs          # SVG to high-res PNG icon rasterizer
+│   └── package-release.mjs         # Clean BYOK release packager & automated secret audit
 ├── popup.html                      # Chrome action popup entry point
 └── tailwind.config.js              # Tailwind setup with darkMode: 'class'
 ```
@@ -93,15 +96,23 @@ prism-tabs/
 3. **Contrast in Light/Dark Themes**:
    - All text, icons, buttons, and inputs must use dual-mode Tailwind classes (`text-slate-900 dark:text-slate-100`, `bg-white dark:bg-slate-900`, etc.).
    - Chrome group badges in `colorPalette.ts` use `text-*-700` in light mode and `text-*-300` in dark mode to prevent "white text on white background".
+4. **Full-Height Settings View & Layout Optimization**:
+   - When `isSettingsOpen` is true, the Dual-Engine Mode Switcher pill and Tab Action Footer (`Undo` / `Ungroup All`) are completely unmounted.
+   - Settings takes 100% of the popup height below the header (`PRISM | Settings`), gaining ~100px of vertical space and eliminating squeezed inner scrolling and cut-off input fields.
+   - Header action button transitions to an `X` (Close) button returning to the main view in one click.
 
 ---
 
 ## ✅ What Has Been Accomplished (v1.1.3)
 
-1. **Core Dual-Engine Pipeline**:
+1. **Core Dual-Engine Pipeline & Semantic Master Prompt**:
    - 7-Stage Logic Mode engine with Jaccard NLP clustering, openerTabId trees, and 60+ domain profiles.
    - Yandex Search vs. Yandex Music differentiation (`music.yandex.ru` -> Media & Audio).
    - Multi-provider AI engine (Groq LPU with multi-model token scaling rotation, Gemini 2.5 Flash, Custom OpenAI endpoints).
+   - **Unified "Smart Magic" Master Prompt (`preset-magic-smart`)**: Single default preset combining cross-domain project workflows, strict separation of work/personal/shopping, and natural language matching (Russian titles for Russian tabs, English for English).
+   - **Strict YouTube Isolation & Themed Sub-clustering**: YouTube tabs are never mixed with non-YouTube websites; multiple videos sharing a topic form themed groups (e.g. Gaming, Dev/Tech, Music).
+   - **Singleton Tab Suppression**: Eliminates 1-tab clutter by gathering orphan YouTube videos into `🎬 YouTube Разное` and orphan web tabs into `🌐 Разное`.
+   - **Dynamic Storage Preset Migration**: Automatically upgrades legacy default presets in `chrome.storage.local` to the master preset while preserving all user-created custom presets.
    - Privacy Sanitizer (stripping sensitive params, tokens, and browser-internal URLs before LLM prompts).
    - Non-destructive **Smart Merge**: ungrouped tabs are merged into existing groups without duplicating.
    - Automatic empty tab cleanup (`New Tab` / `about:blank`).
@@ -112,6 +123,8 @@ prism-tabs/
    - **Graceful Fallback & Zero-Waste Routing**: when Gemini or custom AI keys are unconfigured, zero network requests are made; extension immediately falls back to offline Logic Mode (<1ms) with an informative amber banner.
    - **BYOK Key Seeding**: `.env.local` support (`VITE_GROQ_API_KEY`) safely ignored by Git for dev seeding.
 2. **UI & Theming System**:
+   - **Full-Height Settings View**: Opening Settings hides the Dual-Engine Mode Switcher pill and Tab Action Footer (`Undo`/`Ungroup All`), dedicating 100% of popup height (~376px) to settings with compact behavior toggles, eliminating scrollbar clipping and cut-off inputs.
+   - Dynamic Header: switches to `PRISM | Settings` with a quick `X` (Close) button.
    - 6 modern color themes (`prism-deep`, `midnight-nebula`, `emerald-forest`, `sunset-amber`, `arctic-frost`, `pure-light`).
    - Dynamic **System Theme Auto-Detection (`system` mode)** with live listener on OS `prefers-color-scheme` changes.
    - Visual theme selector (`ThemeSelector.tsx`) with instant persistence in `chrome.storage.local`.
@@ -119,7 +132,13 @@ prism-tabs/
    - Full Manifest V3 CSP compliance: zero inline `<script>` tags, synchronous theme bootstrap in `main.tsx`.
    - Complete light-mode contrast audit (PRISM gradient, buttons, inputs, badges).
    - Animated spectral refraction progress bar with optical prism animation.
-3. **Automated Testing & Documentation**:
+3. **Packaging, Security & Release Canon**:
+   - **Automated Clean BYOK Release Pipeline (`cmd.exe /c npm run package`)**:
+     - Compiles clean distribution bundle via `vite --mode release` into `dist-release/` with all keys stripped to `""`.
+     - Automated secret scanner (`scripts/package-release.mjs`) scans all generated JS/HTML/JSON files with regex for `gsk_` and `AIza` keys to guarantee zero secret leaks.
+     - Generates ready-to-share `releases/prism-tabs-v{version}.zip` (107 KB) and unpacked folder `releases/prism-tabs-v{version}/`.
+     - Strict separation of targets: `dist/` is the developer's personal build (with key), while `releases/` is the public BYOK distribution. Both `dist-release/` and `releases/` are gitignored.
+4. **Automated Testing & Documentation**:
    - 59 unit tests passing across 5 suites (`tests/`).
    - Strict TypeScript (`strict: true`) with zero compilation errors.
    - GitHub Markdown Mermaid diagrams formatted with explicit `<br/>` line wrapping to eliminate text clipping on GitHub.
