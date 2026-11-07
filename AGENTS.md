@@ -41,34 +41,34 @@ This document serves as the single source of truth for AI agents (Antigravity, C
 
 ---
 
-## 🌐 Everything Claude Code (ECC) Engineering Protocols
+## 🌐 Engineering Protocols & Quality Standards
 
-When working on this codebase, all AI agents must follow the core ECC standards and map tasks to corresponding engineering workflows:
+When working on this codebase, all AI agents must follow the core engineering standards and workflows:
 
-### 1. Defect Resolution (`orch-fix-defect`, `tdd-workflow`)
+### 1. Defect Resolution
 - Identify and isolate root causes prior to making code edits.
 - Reproduce the bug with an automated unit test in `tests/`.
 - Apply minimal, surgical fixes without collateral damage or code bloat.
 - Verify that all related test suites remain green.
 
-### 2. Feature Development (`orch-add-feature`, `react-patterns`)
+### 2. Feature Development
 - Design typed contracts and interfaces in `src/engine/types.ts` before writing UI or logic.
 - Maintain strict unidirectional data flow: storage layer (`storageService.ts`) $\rightarrow$ services (`chromeTabsService.ts`, `geminiService.ts`) $\rightarrow$ engine logic $\rightarrow$ UI components.
 - Avoid state mutation anti-patterns; use idiomatic React hooks (`useCallback`, `useMemo`, `useState`).
 
-### 3. User Interface & Ergonomics (`make-interfaces-feel-better`, `frontend-patterns`)
+### 3. User Interface & Ergonomics
 - **Hit targets & padding**: Ensure clickable controls are $\ge 32\text{px}$ in popup windows with clear hover and active feedback.
 - **Keyboard navigation**: Support standard shortcuts (`Alt+P` for grouping, `Alt+U` for ungrouping, `Ctrl+Z` for undo, `Esc` to close drawers/swatches and clear search).
 - **Input protection**: Never trigger global shortcuts (like `Alt+P`) when user focus is inside an `<input>` or `<textarea>`.
 - **DPI scaling**: Preserve exact physical dimensions (`392x440px`, multiples of 8) to prevent fractional subpixel rounding gaps on Windows 125%/150% display scaling.
 - **Light/Dark contrast**: Always provide paired Tailwind classes (`text-slate-900 dark:text-slate-100`, etc.) ensuring crisp contrast across all 6 themes.
 
-### 4. Refactoring & Code Quality (`orch-refine-code`, `coding-standards`)
+### 4. Refactoring & Code Quality
 - Verify all tests pass before initiating structural changes.
 - Preserve public interfaces and behavioral contracts.
 - Eliminate dead code, unused parameters, and runtime warnings (e.g. Node 22 experimental globals).
 
-### 5. Verification & Release Loop (`verification-loop`)
+### 5. Verification & Release Loop
 - **Full Verification**: `npm run verify` $\rightarrow$ runs unit tests, typecheck, production build, and security audit.
 - **Types**: `npm run typecheck` $\rightarrow$ 0 errors.
 - **Tests**: `npm test` $\rightarrow$ 100% pass rate.
