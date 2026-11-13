@@ -1,0 +1,63 @@
+@layer tokens {
+  :root {
+    --popup-width: 392px;
+    --popup-height: 440px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-pill: 999px;
+
+    --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'Cascadia Code', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-md: 13px;
+    --text-lg: 14px;
+
+    --prism-gradient: linear-gradient(90deg, #6366f1, #ec4899, #f59e0b, #10b981, #06b6d4, #6366f1);
+
+    /* Default dark-mode Chrome Tab Group pill tokens (overridden in Pure Light) */
+    --chrome-grey-bg: rgba(154, 160, 166, 0.18);
+    --chrome-grey-fg: #e2e8f0;
+    --chrome-grey-dot: #9aa0a6;
+
+    --chrome-blue-bg: rgba(96, 165, 250, 0.18);
+    --chrome-blue-fg: #93c5fd;
+    --chrome-blue-dot: #60a5fa;
+
+    --chrome-red-bg: rgba(248, 113, 113, 0.18);
+    --chrome-red-fg: #fca5a5;
+    --chrome-red-dot: #f87171;
+
+    --chrome-yellow-bg: rgba(250, 204, 21, 0.18);
+    --chrome-yellow-fg: #fde047;
+    --chrome-yellow-dot: #facc15;
+
+    --chrome-green-bg: rgba(52, 211, 153, 0.18);
+    --chrome-green-fg: #6ee7b7;
+    --chrome-green-dot: #34d399;
+
+    --chrome-pink-bg: rgba(244, 114, 182, 0.18);
+    --chrome-pink-fg: #f9a8d4;
+    --chrome-pink-dot: #f472b6;
+
+    --chrome-purple-bg: rgba(192, 132, 252, 0.18);
+    --chrome-purple-fg: #d8b4fe;
+    --chrome-purple-dot: #c084fc;
+
+    --chrome-cyan-bg: rgba(34, 211, 238, 0.18);
+    --chrome-cyan-fg: #67e8f9;
+    --chrome-cyan-dot: #22d3ee;
+
+    --chrome-orange-bg: rgba(251, 146, 60, 0.18);
+    --chrome-orange-fg: #fdba74;
+    --chrome-orange-dot: #fb923c;
+  }
+}

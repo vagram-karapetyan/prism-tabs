@@ -1,0 +1,33 @@
+{
+  "name": "prism-tabs",
+  "version": "2.0.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0",
+  "description": "Dual-engine Chromium MV3 tab organizer with instant deterministic Logic Mode and privacy-first BYOK Meaning Mode.",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.1.0",
+    "lucide-preact": "^1.72.0",
+    "preact": "^10.26.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@preact/preset-vite": "^2.10.2",
+    "@types/chrome": "^0.0.321",
+    "@types/node": "^26.6.6",
+    "eslint": "^9.26.0",
+    "globals": "^17.14.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "vite": "^6.3.5",
+    "vitest": "^3.1.3"
+  }
+}

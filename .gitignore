@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build & release output
+dist/
+dist-release/
+release/
+releases/
+build/
+*.crx
+*.pem
+*.zip
+
+# Testing & coverage
+coverage/
+
+# Environment variables (NEVER commit real API keys)
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

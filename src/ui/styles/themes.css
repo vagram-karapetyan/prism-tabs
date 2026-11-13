@@ -1,0 +1,207 @@
+@layer themes {
+  :root,
+  :root[data-theme='prism-deep'] {
+    color-scheme: dark;
+    --bg-canvas: #0b0e17;
+    --bg-surface: #121726;
+    --bg-elevated: #1a2136;
+    --bg-hover: #222b45;
+    --bg-input: #0e1320;
+    --border-subtle: rgba(148, 163, 184, 0.16);
+    --border-strong: rgba(148, 163, 184, 0.3);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #818cf8;
+    --accent-strong: #6366f1;
+    --accent-fg: #ffffff;
+    --accent-soft: rgba(129, 140, 248, 0.18);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.16);
+    --mark-bg: rgba(250, 204, 21, 0.32);
+    --mark-fg: #fef08a;
+    --scrollbar-thumb: rgba(148, 163, 184, 0.38);
+    --scrollbar-track: transparent;
+  }
+
+  :root[data-theme='midnight-nebula'] {
+    color-scheme: dark;
+    --bg-canvas: #0f0b1a;
+    --bg-surface: #181229;
+    --bg-elevated: #22193a;
+    --bg-hover: #2c214a;
+    --bg-input: #130e21;
+    --border-subtle: rgba(192, 132, 252, 0.18);
+    --border-strong: rgba(192, 132, 252, 0.34);
+    --text-primary: #f5f3ff;
+    --text-secondary: #c4b5fd;
+    --text-muted: #8b5cf6;
+    --accent: #c084fc;
+    --accent-strong: #a855f7;
+    --accent-fg: #ffffff;
+    --accent-soft: rgba(192, 132, 252, 0.2);
+    --danger: #fb7185;
+    --danger-soft: rgba(251, 113, 133, 0.16);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.16);
+    --mark-bg: rgba(232, 121, 249, 0.34);
+    --mark-fg: #fae8ff;
+    --scrollbar-thumb: rgba(196, 181, 253, 0.38);
+    --scrollbar-track: transparent;
+  }
+
+  :root[data-theme='emerald-forest'] {
+    color-scheme: dark;
+    --bg-canvas: #081410;
+    --bg-surface: #0e1f19;
+    --bg-elevated: #142b23;
+    --bg-hover: #1b382e;
+    --bg-input: #0a1813;
+    --border-subtle: rgba(52, 211, 153, 0.18);
+    --border-strong: rgba(52, 211, 153, 0.34);
+    --text-primary: #ecfdf5;
+    --text-secondary: #a7f3d0;
+    --text-muted: #6ee7b7;
+    --accent: #34d399;
+    --accent-strong: #10b981;
+    --accent-fg: #042f2e;
+    --accent-soft: rgba(52, 211, 153, 0.2);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --success: #6ee7b7;
+    --success-soft: rgba(110, 231, 183, 0.16);
+    --mark-bg: rgba(250, 204, 21, 0.32);
+    --mark-fg: #fef9c3;
+    --scrollbar-thumb: rgba(167, 243, 208, 0.36);
+    --scrollbar-track: transparent;
+  }
+
+  :root[data-theme='sunset-amber'] {
+    color-scheme: dark;
+    --bg-canvas: #16100b;
+    --bg-surface: #211811;
+    --bg-elevated: #2c2017;
+    --bg-hover: #38281d;
+    --bg-input: #1a120d;
+    --border-subtle: rgba(251, 191, 36, 0.18);
+    --border-strong: rgba(251, 191, 36, 0.34);
+    --text-primary: #fffbeb;
+    --text-secondary: #fde68a;
+    --text-muted: #d97706;
+    --accent: #fbbf24;
+    --accent-strong: #f59e0b;
+    --accent-fg: #271706;
+    --accent-soft: rgba(251, 191, 36, 0.2);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
+    --warning: #fb923c;
+    --warning-soft: rgba(251, 146, 60, 0.16);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.16);
+    --mark-bg: rgba(251, 191, 36, 0.34);
+    --mark-fg: #fef3c7;
+    --scrollbar-thumb: rgba(253, 230, 138, 0.36);
+    --scrollbar-track: transparent;
+  }
+
+  :root[data-theme='arctic-frost'] {
+    color-scheme: dark;
+    --bg-canvas: #08131a;
+    --bg-surface: #0e1e29;
+    --bg-elevated: #152b3b;
+    --bg-hover: #1c374b;
+    --bg-input: #0a1720;
+    --border-subtle: rgba(56, 189, 248, 0.18);
+    --border-strong: rgba(56, 189, 248, 0.34);
+    --text-primary: #f0f9ff;
+    --text-secondary: #bae6fd;
+    --text-muted: #7dd3fc;
+    --accent: #38bdf8;
+    --accent-strong: #0284c7;
+    --accent-fg: #ffffff;
+    --accent-soft: rgba(56, 189, 248, 0.2);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.15);
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.16);
+    --mark-bg: rgba(56, 189, 248, 0.34);
+    --mark-fg: #e0f2fe;
+    --scrollbar-thumb: rgba(186, 230, 253, 0.36);
+    --scrollbar-track: transparent;
+  }
+
+  :root[data-theme='pure-light'] {
+    color-scheme: light;
+    --bg-canvas: #f7f8fb;
+    --bg-surface: #ffffff;
+    --bg-elevated: #eef1f7;
+    --bg-hover: #e4e9f2;
+    --bg-input: #ffffff;
+    --border-subtle: rgba(15, 23, 42, 0.12);
+    --border-strong: rgba(15, 23, 42, 0.24);
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --accent: #4f46e5;
+    --accent-strong: #4338ca;
+    --accent-fg: #ffffff;
+    --accent-soft: rgba(79, 70, 229, 0.12);
+    --danger: #dc2626;
+    --danger-soft: rgba(220, 38, 38, 0.12);
+    --warning: #b45309;
+    --warning-soft: rgba(217, 119, 6, 0.12);
+    --success: #047857;
+    --success-soft: rgba(4, 120, 87, 0.12);
+    --mark-bg: #fef08a;
+    --mark-fg: #713f12;
+    --scrollbar-thumb: rgba(71, 85, 105, 0.45);
+    --scrollbar-track: transparent;
+
+    /* High-contrast daylight Chrome Tab Group pill tokens */
+    --chrome-grey-bg: #e2e8f0;
+    --chrome-grey-fg: #1e293b;
+    --chrome-grey-dot: #64748b;
+
+    --chrome-blue-bg: #dbeafe;
+    --chrome-blue-fg: #1e40af;
+    --chrome-blue-dot: #2563eb;
+
+    --chrome-red-bg: #fee2e2;
+    --chrome-red-fg: #991b1b;
+    --chrome-red-dot: #dc2626;
+
+    --chrome-yellow-bg: #fef3c7;
+    --chrome-yellow-fg: #854d0e;
+    --chrome-yellow-dot: #ca8a04;
+
+    --chrome-green-bg: #d1fae5;
+    --chrome-green-fg: #065f46;
+    --chrome-green-dot: #059669;
+
+    --chrome-pink-bg: #fce7f3;
+    --chrome-pink-fg: #9d174d;
+    --chrome-pink-dot: #db2777;
+
+    --chrome-purple-bg: #f3e8ff;
+    --chrome-purple-fg: #6b21a8;
+    --chrome-purple-dot: #9333ea;
+
+    --chrome-cyan-bg: #cffafe;
+    --chrome-cyan-fg: #155e75;
+    --chrome-cyan-dot: #0891b2;
+
+    --chrome-orange-bg: #ffedd5;
+    --chrome-orange-fg: #9a3412;
+    --chrome-orange-dot: #ea580c;
+  }
+}
