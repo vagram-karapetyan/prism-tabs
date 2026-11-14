@@ -921,4 +921,109 @@ describe('Logic Mode clustering, rules, Smart Merge, and RU/EN heuristics', () =
     const aiGroup = plan.groups.find((g) => g.existingGroupId === 101);
     expect(aiGroup?.tabIds).toContain(7);
   });
+
+  it('unifies single-tab repos and general/service pages for GitHub and GitLab without emitting duplicate (1)/(2) groups while keeping multi-tab repo groups separate', () => {
+    // 1. >= 2 single-tab repos + >= 2 general/service pages -> single unified GitHub & GitLab groups + separate >= 2-tab repo groups
+    const mixedPlan = runLogicGrouping({
+      tabs: [
+        // GitHub general/service pages
+        tab({ id: 1, url: 'https://github.com/', title: 'GitHub Dashboard' }),
+        tab({ id: 2, url: 'https://github.com/settings/profile', title: 'Your Profile' }),
+        tab({ id: 3, url: 'https://github.com/notifications', title: 'Notifications' }),
+        tab({ id: 4, url: 'https://github.com/trending', title: 'Trending repositories' }),
+        // GitHub single-tab repos
+        tab({ id: 5, url: 'https://github.com/preactjs/signals', title: 'preactjs/signals' }),
+        tab({ id: 6, url: 'https://github.com/vitejs/vite/issues/1', title: 'Vite issue' }),
+        // GitHub multi-tab repo (must stay dedicated!)
+        tab({ id: 7, url: 'https://github.com/acme/core/pull/10', title: 'PR #10' }),
+        tab({ id: 8, url: 'https://github.com/acme/core/issues/11', title: 'Issue #11' }),
+        // GitLab general/service pages
+        tab({ id: 11, url: 'https://gitlab.com/', title: 'GitLab Home' }),
+        tab({ id: 12, url: 'https://gitlab.com/-/profile', title: 'User Settings' }),
+        tab({ id: 13, url: 'https://gitlab.com/dashboard/projects', title: 'Projects' }),
+        // GitLab single-tab repos
+        tab({ id: 14, url: 'https://gitlab.com/org/alpha', title: 'org/alpha' }),
+        tab({ id: 15, url: 'https://gitlab.com/org/beta/issues/5', title: 'Beta issue' }),
+        // GitLab multi-tab repo (must stay dedicated!)
+        tab({ id: 16, url: 'https://gitlab.com/team/app/merge_requests/1', title: 'MR !1' }),
+        tab({ id: 17, url: 'https://gitlab.com/team/app/pipelines/9', title: 'Pipeline #9' }),
+      ],
+      options: DEFAULT_DETERMINISTIC_OPTIONS,
+      maxTabsPerGroup: 8,
+    });
+
+    const ghGroups = mixedPlan.groups.filter((g) => g.groupName.startsWith('GitHub'));
+    expect(ghGroups.map((g) => g.groupName)).toEqual(
+      expect.arrayContaining(['GitHub', 'GitHub: acme/core']),
+    );
+    expect(ghGroups).toHaveLength(2);
+    expect(mixedPlan.groups.some((g) => /^GitHub \(\d+\)$/.test(g.groupName))).toBe(false);
+
+    const unifiedGh = mixedPlan.groups.find((g) => g.groupName === 'GitHub');
+    expect(unifiedGh?.tabIds).toEqual(expect.arrayContaining([1, 2, 3, 4, 5, 6]));
+    const dedicatedGhRepo = mixedPlan.groups.find((g) => g.groupName === 'GitHub: acme/core');
+    expect(dedicatedGhRepo?.tabIds).toEqual([7, 8]);
+
+    const glGroups = mixedPlan.groups.filter((g) => g.groupName.startsWith('GitLab'));
+    expect(glGroups.map((g) => g.groupName)).toEqual(
+      expect.arrayContaining(['GitLab', 'GitLab: team/app']),
+    );
+    expect(glGroups).toHaveLength(2);
+    expect(mixedPlan.groups.some((g) => /^GitLab \(\d+\)$/.test(g.groupName))).toBe(false);
+
+    const unifiedGl = mixedPlan.groups.find((g) => g.groupName === 'GitLab');
+    expect(unifiedGl?.tabIds).toEqual(expect.arrayContaining([11, 12, 13, 14, 15]));
+    const dedicatedGlRepo = mixedPlan.groups.find((g) => g.groupName === 'GitLab: team/app');
+    expect(dedicatedGlRepo?.tabIds).toEqual([16, 17]);
+
+    // 2. Boundary case: 1 single-tab repo + 1 general/service page -> unified into one group (not dropped!)
+    const onePlusOnePlan = runLogicGrouping({
+      tabs: [
+        tab({ id: 21, url: 'https://github.com/facebook/react', title: 'facebook/react' }),
+        tab({ id: 22, url: 'https://github.com/settings/profile', title: 'GitHub Settings' }),
+        tab({ id: 23, url: 'https://gitlab.com/group/service', title: 'group/service' }),
+        tab({ id: 24, url: 'https://gitlab.com/explore', title: 'Explore GitLab' }),
+      ],
+      options: DEFAULT_DETERMINISTIC_OPTIONS,
+      maxTabsPerGroup: 8,
+    });
+
+    expect(onePlusOnePlan.ungroupedTabIds).toEqual([]);
+    const ghOnePlusOne = onePlusOnePlan.groups.find((g) => g.groupName === 'GitHub');
+    expect(ghOnePlusOne?.tabIds).toEqual(expect.arrayContaining([21, 22]));
+    const glOnePlusOne = onePlusOnePlan.groups.find((g) => g.groupName === 'GitLab');
+    expect(glOnePlusOne?.tabIds).toEqual(expect.arrayContaining([23, 24]));
+
+    // 3. Dedicated multi-tab repo stays isolated and does NOT absorb a lone general/service page when no other general/single-repo pair exists
+    const dedicatedOnlyPlan = runLogicGrouping({
+      tabs: [
+        tab({ id: 31, url: 'https://github.com/preactjs/signals/issues/1', title: 'Issue 1' }),
+        tab({ id: 32, url: 'https://github.com/preactjs/signals/pull/2', title: 'PR 2' }),
+        tab({ id: 33, url: 'https://github.com/notifications', title: 'Notifications' }),
+      ],
+      options: DEFAULT_DETERMINISTIC_OPTIONS,
+      maxTabsPerGroup: 8,
+    });
+    expect(dedicatedOnlyPlan.groups.map((g) => g.groupName)).toEqual(['GitHub: preactjs/signals']);
+    expect(dedicatedOnlyPlan.ungroupedTabIds).toEqual([33]);
+
+    // 4. When unified GitHub tabs exceed maxTabsPerGroup, group-splitter still splits cleanly into numbered parts
+    const oversizedPlan = runLogicGrouping({
+      tabs: [
+        tab({ id: 41, url: 'https://github.com/', title: 'GitHub' }),
+        tab({ id: 42, url: 'https://github.com/settings/profile', title: 'Profile' }),
+        tab({ id: 43, url: 'https://github.com/notifications', title: 'Notifications' }),
+        tab({ id: 44, url: 'https://github.com/org/repo-a', title: 'repo-a' }),
+        tab({ id: 45, url: 'https://github.com/org/repo-b', title: 'repo-b' }),
+        tab({ id: 46, url: 'https://github.com/org/repo-c', title: 'repo-c' }),
+      ],
+      options: DEFAULT_DETERMINISTIC_OPTIONS,
+      maxTabsPerGroup: 4,
+    });
+    expect(oversizedPlan.ungroupedTabIds).toEqual([]);
+    expect(oversizedPlan.groups.length).toBeGreaterThanOrEqual(2);
+    for (const g of oversizedPlan.groups) {
+      expect(g.tabIds.length).toBeLessThanOrEqual(4);
+    }
+  });
 });

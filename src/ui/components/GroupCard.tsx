@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Pencil, Unlink } from 'lucide-preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
   CHROME_TAB_GROUP_COLORS,
   type ChromeTabGroupColor,
@@ -8,7 +8,12 @@ import {
 } from '../../domain/types';
 import { type PopupStore } from '../state/popup.store';
 import { resolveDraggedTabId } from '../utils/drag-drop';
+import { CHROME_COLOR_LABELS } from '../utils/presentation';
 import { HighlightedText, TabRow } from './TabRow';
+
+function hasLegacyImeKeyCode(eventCompat: { readonly keyCode?: number }): boolean {
+  return eventCompat.keyCode === 229;
+}
 
 interface GroupCardProps {
   store: PopupStore;
@@ -22,12 +27,32 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
   const [draftTitle, setDraftTitle] = useState(group.title);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isDropOver, setIsDropOver] = useState(false);
+  const [collapsedForQuery, setCollapsedForQuery] = useState<string | null>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const skipNextBlurCommitRef = useRef(false);
 
-  const hasSearch = query.trim().length > 0;
-  const isExpanded = hasSearch || store.expandedGroupIds.value.includes(group.id);
+  const trimmedQuery = query.trim();
+  const hasSearch = trimmedQuery.length > 0;
+  const isExpanded = hasSearch
+    ? collapsedForQuery !== trimmedQuery
+    : store.expandedGroupIds.value.includes(group.id);
   const draggingId = store.draggingTabId.value;
 
+  useEffect(() => {
+    if (isEditingTitle && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [isEditingTitle]);
+
+  useEffect(() => {
+    if (draggingId === null && isDropOver) {
+      setIsDropOver(false);
+    }
+  }, [draggingId, isDropOver]);
+
   function beginRename(): void {
+    skipNextBlurCommitRef.current = false;
     setDraftTitle(group.title || group.cleanTitle);
     setIsEditingTitle(true);
     setIsPaletteOpen(false);
@@ -42,6 +67,7 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
   }
 
   function cancelRename(): void {
+    skipNextBlurCommitRef.current = true;
     setIsEditingTitle(false);
     setDraftTitle(group.title);
   }
@@ -56,6 +82,14 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
   return (
     <article
       class={`group-card${isDropOver ? ' is-drop-target' : ''}`}
+      style={{ '--group-accent': `var(--chrome-${group.color}-dot)` }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && isPaletteOpen) {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsPaletteOpen(false);
+        }
+      }}
       onDragOver={(event) => {
         event.preventDefault();
         if (event.dataTransfer) {
@@ -63,8 +97,17 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
         }
         if (!isDropOver) setIsDropOver(true);
       }}
-      onDragLeave={() => {
-        if (isDropOver) setIsDropOver(false);
+      onDragLeave={(event) => {
+        const related = event.relatedTarget;
+        if (
+          !(
+            typeof Node !== 'undefined' &&
+            related instanceof Node &&
+            event.currentTarget.contains(related)
+          )
+        ) {
+          setIsDropOver(false);
+        }
       }}
       onDrop={(event) => {
         event.preventDefault();
@@ -80,31 +123,51 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
           <button
             type="button"
             class="group-expand-btn"
-            aria-label={isExpanded ? 'Collapse group' : 'Expand group'}
+            aria-label={`${group.title || 'Untitled group'} tabs`}
             aria-expanded={isExpanded}
-            onClick={() => { store.toggleGroupExpanded(group.id); }}
+            onClick={() => {
+              if (hasSearch) {
+                setCollapsedForQuery((prev) => (prev === trimmedQuery ? null : trimmedQuery));
+              } else {
+                store.toggleGroupExpanded(group.id);
+              }
+            }}
           >
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
           </button>
 
           {isEditingTitle ? (
             <input
+              ref={renameInputRef}
               type="text"
               class="inline-rename-input"
               aria-label="Rename group"
               autoFocus
               value={draftTitle}
-              onInput={(event) => { setDraftTitle(event.currentTarget.value); }}
-              onBlur={() => { commitRename(); }}
+              onInput={(event) => {
+                setDraftTitle(event.currentTarget.value);
+              }}
+              onBlur={() => {
+                if (skipNextBlurCommitRef.current) {
+                  skipNextBlurCommitRef.current = false;
+                  return;
+                }
+                commitRename();
+              }}
               onKeyDown={(event) => {
-                if (event.isComposing) return;
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  commitRename();
-                } else if (event.key === 'Escape') {
+                if (event.key === 'Escape') {
                   event.preventDefault();
                   event.stopPropagation();
                   cancelRename();
+                  return;
+                }
+                if (event.isComposing || event.key === 'Process' || hasLegacyImeKeyCode(event)) {
+                  return;
+                }
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  skipNextBlurCommitRef.current = true;
+                  commitRename();
                 }
               }}
             />
@@ -114,9 +177,12 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
               style={{
                 backgroundColor: `var(--chrome-${group.color}-bg)`,
                 color: `var(--chrome-${group.color}-fg)`,
+                borderColor: `var(--chrome-${group.color}-border)`,
               }}
               title="Double-click to rename group"
-              onDblClick={() => { beginRename(); }}
+              onDblClick={() => {
+                beginRename();
+              }}
             >
               <span class="group-pill-title">
                 <HighlightedText text={group.title || 'Untitled Group'} query={query} />
@@ -124,17 +190,21 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
             </span>
           )}
 
-          <span class="group-count-badge">{tabs.length}</span>
+          <span class="group-count-badge" title={`${tabs.length} tabs in group`}>
+            {tabs.length}
+          </span>
         </div>
 
         <div class="group-actions">
           <button
             type="button"
             class="group-action-btn"
-            aria-label="Change group color"
+            aria-label={`Change color (${CHROME_COLOR_LABELS[group.color]})`}
             aria-expanded={isPaletteOpen}
             title="Change group color"
-            onClick={() => { setIsPaletteOpen((prev) => !prev); }}
+            onClick={() => {
+              setIsPaletteOpen((prev) => !prev);
+            }}
           >
             <span
               class="color-dot-btn"
@@ -147,7 +217,19 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
             class="group-action-btn"
             aria-label="Rename group"
             title="Rename group"
-            onClick={() => { beginRename(); }}
+            onMouseDown={(event) => {
+              if (isEditingTitle) {
+                event.preventDefault();
+              }
+            }}
+            onClick={() => {
+              if (isEditingTitle) {
+                skipNextBlurCommitRef.current = true;
+                commitRename();
+              } else {
+                beginRename();
+              }
+            }}
           >
             <Pencil size={12} />
           </button>
@@ -165,18 +247,28 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
       </div>
 
       {isPaletteOpen && (
-        <div class="swatch-picker" role="group" aria-label="Chrome group colors">
-          {CHROME_TAB_GROUP_COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              class={`swatch-option${color === group.color ? ' is-selected' : ''}`}
-              style={{ backgroundColor: `var(--chrome-${color}-dot)` }}
-              aria-label={`Color ${color}`}
-              title={color}
-              onClick={() => { handleColorPick(color); }}
-            />
-          ))}
+        <div class="swatch-picker" role="group" aria-label="Chrome tab group colors">
+          {CHROME_TAB_GROUP_COLORS.map((color) => {
+            const selected = color === group.color;
+            return (
+              <button
+                key={color}
+                type="button"
+                class={`swatch-option${selected ? ' is-selected' : ''}`}
+                aria-label={`Color ${CHROME_COLOR_LABELS[color]}`}
+                aria-pressed={selected}
+                title={CHROME_COLOR_LABELS[color]}
+                onClick={() => {
+                  handleColorPick(color);
+                }}
+              >
+                <span
+                  class="swatch-orb"
+                  style={{ backgroundColor: `var(--chrome-${color}-dot)` }}
+                />
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -192,7 +284,9 @@ export function GroupCard({ store, group, tabs, query }: GroupCardProps) {
                 store.setDraggingTabId(tabId);
                 event.dataTransfer?.setData('text/plain', String(tabId));
               }}
-              onDragEnd={() => { store.setDraggingTabId(null); }}
+              onDragEnd={() => {
+                store.setDraggingTabId(null);
+              }}
             />
           ))}
         </div>

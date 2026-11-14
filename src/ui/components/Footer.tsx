@@ -1,4 +1,4 @@
-import { Layers, Sparkles, Undo2, Unlink } from 'lucide-preact';
+import { Sparkles, Undo2, Unlink } from 'lucide-preact';
 import { type PopupStore } from '../state/popup.store';
 
 interface FooterProps {
@@ -21,7 +21,12 @@ export function Footer({ store }: FooterProps) {
         onClick={() => void store.runSort()}
       >
         <Sparkles size={14} />
-        <span>{isSorting ? 'Sorting...' : 'Prism Tabs'}</span>
+        <span>{isSorting ? 'Sorting...' : 'Sort Tabs'}</span>
+        {!isSorting && (
+          <kbd class="btn-primary-kbd" aria-hidden="true">
+            Alt+P
+          </kbd>
+        )}
       </button>
 
       <button
@@ -43,8 +48,7 @@ export function Footer({ store }: FooterProps) {
         onClick={() => void store.runUndo()}
       >
         <Undo2 size={13} />
-        <span class="sr-only">Undo</span>
-        <Layers size={11} style={{ opacity: 0.65 }} />
+        <span>Undo</span>
       </button>
     </footer>
   );

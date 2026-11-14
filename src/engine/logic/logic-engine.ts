@@ -70,6 +70,104 @@ interface PendingBucket {
   conceptId?: ConceptId;
 }
 
+interface CodePlatformUnificationSpec {
+  unifiedGroupId: string;
+  groupName: string;
+  emoji: string;
+  color: ChromeTabGroupColor;
+  canonicalBucketId: string;
+  platformBucketPrefixes: readonly string[];
+  reasoning: string;
+}
+
+const CODE_PLATFORM_UNIFICATION_SPECS: readonly CodePlatformUnificationSpec[] = [
+  {
+    unifiedGroupId: 'logic-platform-code-github-unified',
+    groupName: 'GitHub',
+    emoji: '🐙',
+    color: 'purple',
+    canonicalBucketId: 'logic-canonical-brand-github',
+    platformBucketPrefixes: ['platform:github.com:', 'platform:code:github'],
+    reasoning: 'Unified GitHub repositories and settings',
+  },
+  {
+    unifiedGroupId: 'logic-platform-code-gitlab-unified',
+    groupName: 'GitLab',
+    emoji: '🦊',
+    color: 'orange',
+    canonicalBucketId: 'logic-canonical-brand-gitlab',
+    platformBucketPrefixes: ['platform:gitlab.com:', 'platform:code:gitlab'],
+    reasoning: 'Unified GitLab repositories and pages',
+  },
+];
+
+/**
+ * Unifies single-tab repository buckets and general canonical brand pages for a code host
+ * (GitHub/GitLab) into one platform group so they never emit competing `Name (1)` / `Name (2)` groups
+ * or orphan a 1+1 repo/service pair. Multi-tab repo groups (`GitHub: owner/repo`) are untouched.
+ */
+function unifyCodePlatformGroups(
+  spec: CodePlatformUnificationSpec,
+  minGroupSize: number,
+  newGroups: ProposedGroup[],
+  singletonBuckets: Map<number, PendingBucket>,
+  tabToGroupMap: Map<number, ProposedGroup>,
+  domainKeyByGroupId: Map<string, string>,
+  knownGroupConcepts: Map<string, ConceptId | null>,
+): void {
+  const repoSingletonIds: number[] = [];
+  const generalSingletonIds: number[] = [];
+
+  for (const [tabId, bucket] of singletonBuckets.entries()) {
+    if (bucket.isExplicitRule) continue;
+    if (spec.platformBucketPrefixes.some((prefix) => bucket.platformKey?.startsWith(prefix))) {
+      repoSingletonIds.push(tabId);
+    } else if (bucket.id === spec.canonicalBucketId) {
+      generalSingletonIds.push(tabId);
+    }
+  }
+
+  if (repoSingletonIds.length === 0) return;
+
+  const generalGroupIndex = newGroups.findIndex((g) => g.id === spec.canonicalBucketId);
+  const existingGeneralGroup = generalGroupIndex >= 0 ? newGroups[generalGroupIndex] : undefined;
+  const combinedTabIds = [
+    ...(existingGeneralGroup?.tabIds ?? []),
+    ...generalSingletonIds,
+    ...repoSingletonIds,
+  ];
+
+  if (combinedTabIds.length < minGroupSize) return;
+
+  const unifiedGroup: ProposedGroup = {
+    id: spec.unifiedGroupId,
+    groupName: spec.groupName,
+    emoji: spec.emoji,
+    color: spec.color,
+    tabIds: combinedTabIds,
+    source: 'platform',
+    reasoning: spec.reasoning,
+  };
+
+  if (existingGeneralGroup) {
+    newGroups[generalGroupIndex] = unifiedGroup;
+    domainKeyByGroupId.delete(existingGeneralGroup.id);
+    knownGroupConcepts.delete(existingGeneralGroup.id);
+  } else {
+    newGroups.push(unifiedGroup);
+  }
+
+  for (const id of combinedTabIds) {
+    tabToGroupMap.set(id, unifiedGroup);
+  }
+  for (const id of generalSingletonIds) {
+    singletonBuckets.delete(id);
+  }
+  for (const id of repoSingletonIds) {
+    singletonBuckets.delete(id);
+  }
+}
+
 const defaultClock: ClockPort = {
   nowMs: () => Date.now(),
   nowIso: () => new Date().toISOString(),
@@ -630,10 +728,9 @@ export function runLogicGrouping(params: LogicGroupingParams): GroupingPlan {
     }
   }
 
-  // Stage 4.5: Unify >= 2 standalone Google Workspace sub-tool singletons (e.g. 1 Doc + 1 Sheet) into Google Workspace
+  // Stage 4.5: Unify standalone Google Workspace sub-tool singletons and code-host single-tab repos + general pages
+  const minUnifiedGroupSize = Math.max(2, options.minTabsPerGroup);
   const workspaceSingletonIds: number[] = [];
-  const githubSingletonIds: number[] = [];
-  const gitlabSingletonIds: number[] = [];
 
   for (const [tabId, bucket] of singletonBuckets.entries()) {
     if (bucket.isExplicitRule) continue;
@@ -642,20 +739,10 @@ export function runLogicGrouping(params: LogicGroupingParams): GroupingPlan {
       bucket.platformKey?.startsWith('platform:workspace:')
     ) {
       workspaceSingletonIds.push(tabId);
-    } else if (
-      bucket.platformKey?.startsWith('platform:github.com:') ||
-      bucket.platformKey?.startsWith('platform:code:github')
-    ) {
-      githubSingletonIds.push(tabId);
-    } else if (
-      bucket.platformKey?.startsWith('platform:gitlab.com:') ||
-      bucket.platformKey?.startsWith('platform:code:gitlab')
-    ) {
-      gitlabSingletonIds.push(tabId);
     }
   }
 
-  if (workspaceSingletonIds.length >= 2) {
+  if (workspaceSingletonIds.length >= minUnifiedGroupSize) {
     const wsGroup: ProposedGroup = {
       id: 'logic-platform-workspace-unified',
       groupName: 'Google Workspace',
@@ -672,38 +759,16 @@ export function runLogicGrouping(params: LogicGroupingParams): GroupingPlan {
     }
   }
 
-  if (githubSingletonIds.length >= 2) {
-    const ghGroup: ProposedGroup = {
-      id: 'logic-platform-code-github-unified',
-      groupName: 'GitHub',
-      emoji: '🐙',
-      color: 'purple',
-      tabIds: [...githubSingletonIds],
-      source: 'platform',
-      reasoning: 'Unified GitHub repositories and settings',
-    };
-    newGroups.push(ghGroup);
-    for (const id of githubSingletonIds) {
-      tabToGroupMap.set(id, ghGroup);
-      singletonBuckets.delete(id);
-    }
-  }
-
-  if (gitlabSingletonIds.length >= 2) {
-    const glGroup: ProposedGroup = {
-      id: 'logic-platform-code-gitlab-unified',
-      groupName: 'GitLab',
-      emoji: '🦊',
-      color: 'orange',
-      tabIds: [...gitlabSingletonIds],
-      source: 'platform',
-      reasoning: 'Unified GitLab repositories',
-    };
-    newGroups.push(glGroup);
-    for (const id of gitlabSingletonIds) {
-      tabToGroupMap.set(id, glGroup);
-      singletonBuckets.delete(id);
-    }
+  for (const spec of CODE_PLATFORM_UNIFICATION_SPECS) {
+    unifyCodePlatformGroups(
+      spec,
+      minUnifiedGroupSize,
+      newGroups,
+      singletonBuckets,
+      tabToGroupMap,
+      domainKeyByGroupId,
+      knownGroupConcepts,
+    );
   }
 
   // Stage 5: Contextual Research Chain Linking (`Research & Search`)

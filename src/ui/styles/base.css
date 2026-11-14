@@ -9,38 +9,52 @@
     color: var(--text-primary);
     font-family: var(--font-sans);
     font-size: var(--text-sm);
-    line-height: 1.4;
+    line-height: 1.42;
+    text-align: start;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     box-sizing: border-box;
-  }
-
-  *,
-  *::before,
-  *::after {
-    box-sizing: inherit;
+    accent-color: var(--accent);
   }
 
   :focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 1px;
+    outline-offset: 2px;
   }
 
-  input,
+  input:not([type='checkbox']),
   select,
   textarea {
     background-color: var(--bg-input);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
-    padding: 5px 8px;
+    padding: 6px 9px;
     font-size: var(--text-sm);
+    transition: border-color 0.14s ease, box-shadow 0.14s ease;
   }
 
-  input:focus,
-  select:focus,
-  textarea:focus {
+  input:not([type='checkbox']):focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
     border-color: var(--accent);
-    outline: none;
+    outline: 2px solid var(--accent-soft);
+    outline-offset: 0;
+  }
+
+  ::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--text-primary);
+  }
+
+  select option {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
   }
 
   mark {
@@ -48,5 +62,17 @@
     color: var(--mark-fg);
     border-radius: 3px;
     padding: 0 2px;
+  }
+
+  .sr-only:where(:not(:focus-within, :active)) {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
   }
 }

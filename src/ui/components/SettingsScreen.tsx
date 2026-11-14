@@ -1,4 +1,14 @@
-import { Download, Eye, EyeOff, Plus, Trash2, Upload } from 'lucide-preact';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  Eye,
+  EyeOff,
+  Minus,
+  Plus,
+  Trash2,
+  Upload,
+} from 'lucide-preact';
 import { useRef, useState } from 'preact/hooks';
 import { MAX_TABS_PER_GROUP_PRESETS } from '../../domain/defaults';
 import { THEME_DESCRIPTORS } from '../../domain/themes';
@@ -16,10 +26,19 @@ import {
   type RuleMatchTarget,
 } from '../../domain/types';
 import { type PopupStore, type SettingsTabId } from '../state/popup.store';
+import {
+  CHROME_COLOR_LABELS,
+  THEME_PALETTE_PREVIEW,
+  getAiStatusBadge,
+  handleTabListKeyDown,
+} from '../utils/presentation';
+import { ToggleSwitch } from './ToggleSwitch';
 
 interface SettingsScreenProps {
   store: PopupStore;
 }
+
+const SETTINGS_TAB_IDS: readonly SettingsTabId[] = ['general', 'ai', 'rules'];
 
 const BEHAVIOR_TOGGLES: ReadonlyArray<{
   key: 'collapseOthersOnGroup' | 'closeEmptyTabs' | 'closeYouTubeHomeTabs' | 'discardInactiveTabs';
@@ -35,7 +54,7 @@ const LOGIC_TOGGLES: ReadonlyArray<{
   key: Exclude<keyof DeterministicOptions, 'minTabsPerGroup'>;
   label: string;
 }> = [
-  { key: 'mergeSubdomains', label: 'Merge subdomains (docs.x.com -> x.com)' },
+  { key: 'mergeSubdomains', label: 'Merge subdomains (docs.x.com → x.com)' },
   { key: 'groupByFirstPathSegment', label: 'Sub-cluster by URL path segment' },
   { key: 'groupSingletonsIntoMisc', label: 'Bundle singletons into Misc group' },
   { key: 'ignorePinnedTabs', label: 'Keep pinned tabs untouched' },
@@ -49,7 +68,9 @@ function triggerJsonDownload(jsonContent: string): void {
   anchor.href = url;
   anchor.download = `prism-tabs-config-${new Date().toISOString().slice(0, 10)}.json`;
   anchor.click();
-  setTimeout(() => { URL.revokeObjectURL(url); }, 1000);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 export function SettingsScreen({ store }: SettingsScreenProps) {
@@ -58,7 +79,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showApiKey, setShowApiKey] = useState(false);
-  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const [importFeedback, setImportFeedback] = useState<{ ok: boolean; text: string } | null>(null);
 
   const [ruleName, setRuleName] = useState('');
   const [ruleEmoji, setRuleEmoji] = useState('🔖');
@@ -75,7 +96,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
     const content = await file.text();
     const res = await store.importConfigJson(content);
     const warnings = res.warnings.length > 0 ? ` (${res.warnings.join('; ')})` : '';
-    setImportFeedback(`${res.message}${warnings}`);
+    setImportFeedback({ ok: res.success, text: `${res.message}${warnings}` });
   }
 
   function handleAddRule(event: Event): void {
@@ -87,8 +108,18 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
       return;
     }
 
+    if (ruleIsRegex) {
+      try {
+        new RegExp(cleanPattern, 'i');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Invalid regular expression.';
+        store.showToast('error', `Invalid regex: ${msg}`);
+        return;
+      }
+    }
+
     const nextRule: DeterministicRule = {
-      id: `rule-${Date.now()}`,
+      id: `rule-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: cleanName,
       emoji: ruleEmoji.trim() || '📌',
       color: ruleColor,
@@ -125,28 +156,46 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
     { id: 'rules', label: 'Rules' },
   ];
 
+  const onSettingsTabKeyDown = (event: KeyboardEvent): void => {
+    handleTabListKeyDown(event, SETTINGS_TAB_IDS, activeTab, (nextTab) => {
+      store.setSettingsTab(nextTab);
+    });
+  };
+
   return (
     <>
       <nav class="settings-tabs" role="tablist" aria-label="Settings sections">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            class={`settings-tab-btn${activeTab === tab.id ? ' is-active' : ''}`}
-            onClick={() => { store.setSettingsTab(tab.id); }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const selected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              tabIndex={selected ? 0 : -1}
+              class="settings-tab-btn"
+              onKeyDown={onSettingsTabKeyDown}
+              onClick={() => {
+                store.setSettingsTab(tab.id);
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </nav>
 
       <main class="prism-scroll-area">
         {activeTab === 'general' && (
           <>
             <section class="settings-section">
-              <div class="settings-section-title">Max Tabs Per Group</div>
+              <div class="settings-section-head">
+                <h2 class="settings-section-title">Max Tabs Per Group</h2>
+                <p class="settings-section-hint">
+                  Automatically splits oversized groups into clean sub-clusters.
+                </p>
+              </div>
               <div class="chip-row" role="group" aria-label="Maximum tabs per group">
                 {MAX_TABS_PER_GROUP_PRESETS.map((preset) => {
                   const isActive = settings.maxTabsPerGroup === preset;
@@ -155,9 +204,10 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       key={String(preset)}
                       type="button"
                       class={`size-chip${isActive ? ' is-active' : ''}`}
+                      aria-pressed={isActive}
                       onClick={() => void store.updateSettings({ maxTabsPerGroup: preset })}
                     >
-                      {preset === null ? 'Unlimited' : String(preset)}
+                      {preset === null ? '∞ Unlimited' : String(preset)}
                     </button>
                   );
                 })}
@@ -165,51 +215,71 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
             </section>
 
             <section class="settings-section">
-              <div class="settings-section-title">Cleanup & Performance</div>
+              <h2 class="settings-section-title">Cleanup & Performance</h2>
               {BEHAVIOR_TOGGLES.map((item) => (
-                <label key={item.key} class="toggle-row">
-                  <span>{item.label}</span>
-                  <input
-                    type="checkbox"
-                    checked={settings[item.key]}
-                    onChange={(event) => {
-                      void store.updateSettings({
-                        [item.key]: event.currentTarget.checked,
-                      });
-                    }}
-                  />
-                </label>
+                <ToggleSwitch
+                  key={item.key}
+                  id={`behavior-${item.key}`}
+                  label={item.label}
+                  checked={settings[item.key]}
+                  onChange={(checked) => {
+                    void store.updateSettings({ [item.key]: checked });
+                  }}
+                />
               ))}
             </section>
 
             <section class="settings-section">
-              <div class="settings-section-title">Appearance & Theme</div>
+              <h2 class="settings-section-title">Appearance & Theme</h2>
               <div class="theme-grid">
-                {THEME_DESCRIPTORS.map((theme) => (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    class={`theme-chip${settings.theme === theme.id ? ' is-active' : ''}`}
-                    title={theme.description}
-                    onClick={() => void store.updateSettings({ theme: theme.id })}
-                  >
-                    <span
-                      style={{
-                        width: '10px',
-                        height: '10px',
-                        borderRadius: '999px',
-                        backgroundColor: theme.swatchAccent,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span>{theme.label}</span>
-                  </button>
-                ))}
+                {THEME_DESCRIPTORS.map((theme) => {
+                  const preview = THEME_PALETTE_PREVIEW[theme.id];
+                  const isActive = settings.theme === theme.id;
+                  const isWide = theme.id === 'system';
+                  return (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      class={`theme-card${isWide ? ' theme-card--wide' : ''}${isActive ? ' is-active' : ''}`}
+                      aria-pressed={isActive}
+                      title={theme.description}
+                      onClick={() => void store.updateSettings({ theme: theme.id })}
+                    >
+                      <span
+                        class={`theme-preview-swatch${theme.id === 'system' ? ' is-system' : ''}`}
+                        style={{ backgroundColor: preview.canvas }}
+                        aria-hidden="true"
+                      >
+                        {theme.id !== 'system' && (
+                          <span
+                            class="theme-preview-bar"
+                            style={{ backgroundColor: preview.surface }}
+                          />
+                        )}
+                        <span
+                          class="theme-preview-dot"
+                          style={{ backgroundColor: preview.accent }}
+                        />
+                      </span>
+                      <span class="theme-card-meta">
+                        <span class="theme-card-name">{theme.label}</span>
+                        <span class="theme-card-tone">
+                          {isWide ? theme.description : preview.toneLabel}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </section>
 
             <section class="settings-section">
-              <div class="settings-section-title">Config Backup (BYOK Safe)</div>
+              <div class="settings-section-head">
+                <h2 class="settings-section-title">Config Backup (BYOK Safe)</h2>
+                <p class="settings-section-hint">
+                  Exports rules, preferences & presets. API keys are never exported.
+                </p>
+              </div>
               <div class="input-row">
                 <button
                   type="button"
@@ -241,8 +311,18 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                 />
               </div>
               {importFeedback && (
-                <div class="banner banner-info" role="status">
-                  <span>{importFeedback}</span>
+                <div
+                  class={`banner ${importFeedback.ok ? 'banner-success' : 'banner-error'}`}
+                  role="status"
+                >
+                  <span class="banner-lead" style={{ alignItems: 'center' }}>
+                    {importFeedback.ok ? (
+                      <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
+                    ) : (
+                      <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                    )}
+                    <span>{importFeedback.text}</span>
+                  </span>
                 </div>
               )}
             </section>
@@ -252,7 +332,25 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
         {activeTab === 'ai' && (
           <>
             <section class="settings-section">
-              <div class="settings-section-title">Meaning Mode Provider (BYOK)</div>
+              <div class="settings-section-head">
+                <div class="settings-section-head-row">
+                  <h2 class="settings-section-title">Meaning Mode Provider (BYOK)</h2>
+                  {(() => {
+                    const aiStatus = getAiStatusBadge(settings);
+                    return (
+                      <span
+                        class={`ai-ready-pill${aiStatus.ready ? ' is-ready' : ' is-missing'}`}
+                      >
+                        {aiStatus.ready ? `${aiStatus.label} ready` : 'Key required'}
+                      </span>
+                    );
+                  })()}
+                </div>
+                <p class="settings-section-hint">
+                  Stored locally in Chrome storage. Falls back to Logic Mode if offline or missing.
+                </p>
+              </div>
+
               <div class="field-group">
                 <label class="field-label" for="ai-provider-select">
                   Provider
@@ -262,6 +360,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                   class="select-input"
                   value={settings.aiProvider}
                   onChange={(event) => {
+                    setShowApiKey(false);
                     void store.updateSettings({
                       aiProvider: event.currentTarget.value as AiProvider,
                     });
@@ -283,7 +382,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       <input
                         id="groq-key-input"
                         type={showApiKey ? 'text' : 'password'}
-                        class="text-input"
+                        class="text-input text-input--mono"
                         autocomplete="off"
                         placeholder="gsk_..."
                         value={settings.groqApiKey}
@@ -293,11 +392,13 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       />
                       <button
                         type="button"
-                        class="prism-icon-btn"
+                        class="prism-icon-btn prism-icon-btn--square"
                         aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
-                        onClick={() => { setShowApiKey((v) => !v); }}
+                        onClick={() => {
+                          setShowApiKey((v) => !v);
+                        }}
                       >
-                        {showApiKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                        {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
                     </div>
                   </div>
@@ -307,7 +408,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                     </label>
                     <select
                       id="groq-model-select"
-                      class="select-input"
+                      class="select-input text-input--mono"
                       value={settings.groqModel}
                       onChange={(e) => {
                         void store.updateSettings({
@@ -335,7 +436,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       <input
                         id="gemini-key-input"
                         type={showApiKey ? 'text' : 'password'}
-                        class="text-input"
+                        class="text-input text-input--mono"
                         autocomplete="off"
                         placeholder="AIza..."
                         value={settings.geminiApiKey}
@@ -345,11 +446,13 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       />
                       <button
                         type="button"
-                        class="prism-icon-btn"
+                        class="prism-icon-btn prism-icon-btn--square"
                         aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
-                        onClick={() => { setShowApiKey((v) => !v); }}
+                        onClick={() => {
+                          setShowApiKey((v) => !v);
+                        }}
                       >
-                        {showApiKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                        {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
                     </div>
                   </div>
@@ -359,7 +462,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                     </label>
                     <select
                       id="gemini-model-select"
-                      class="select-input"
+                      class="select-input text-input--mono"
                       value={settings.geminiModel}
                       onChange={(e) => {
                         void store.updateSettings({
@@ -386,7 +489,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                     <input
                       id="custom-url-input"
                       type="url"
-                      class="text-input"
+                      class="text-input text-input--mono"
                       value={settings.customBaseUrl}
                       onInput={(e) => {
                         void store.updateSettings({ customBaseUrl: e.currentTarget.value });
@@ -400,7 +503,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                     <input
                       id="custom-model-input"
                       type="text"
-                      class="text-input"
+                      class="text-input text-input--mono"
                       value={settings.customModel}
                       onInput={(e) => {
                         void store.updateSettings({ customModel: e.currentTarget.value });
@@ -415,7 +518,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       <input
                         id="custom-key-input"
                         type={showApiKey ? 'text' : 'password'}
-                        class="text-input"
+                        class="text-input text-input--mono"
                         autocomplete="off"
                         value={settings.customApiKey}
                         onInput={(e) => {
@@ -424,11 +527,13 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       />
                       <button
                         type="button"
-                        class="prism-icon-btn"
+                        class="prism-icon-btn prism-icon-btn--square"
                         aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
-                        onClick={() => { setShowApiKey((v) => !v); }}
+                        onClick={() => {
+                          setShowApiKey((v) => !v);
+                        }}
                       >
-                        {showApiKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                        {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
                     </div>
                   </div>
@@ -437,7 +542,7 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
             </section>
 
             <section class="settings-section">
-              <div class="settings-section-title">Custom Prompt Directive</div>
+              <h2 class="settings-section-title">Custom Prompt Directive</h2>
               {settings.promptPresets.length > 0 && (
                 <div class="field-group">
                   <label class="field-label" for="preset-select">
@@ -481,50 +586,90 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
         {activeTab === 'rules' && (
           <>
             <section class="settings-section">
-              <div class="settings-section-title">Logic Mode Heuristics</div>
+              <h2 class="settings-section-title">Logic Mode Heuristics</h2>
               {LOGIC_TOGGLES.map((item) => (
-                <label key={item.key} class="toggle-row">
-                  <span>{item.label}</span>
-                  <input
-                    type="checkbox"
-                    checked={settings.deterministicOptions[item.key]}
-                    onChange={(event) => {
-                      updateDeterministicOption(item.key, event.currentTarget.checked);
-                    }}
-                  />
-                </label>
+                <ToggleSwitch
+                  key={item.key}
+                  id={`logic-${item.key}`}
+                  label={item.label}
+                  checked={settings.deterministicOptions[item.key]}
+                  onChange={(checked) => {
+                    updateDeterministicOption(item.key, checked);
+                  }}
+                />
               ))}
 
               <div class="toggle-row">
-                <span>Minimum tabs per group</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={5}
-                  class="text-input"
-                  style={{ width: '58px', textAlign: 'center' }}
-                  value={settings.deterministicOptions.minTabsPerGroup}
-                  onChange={(event) => {
-                    const num = Number.parseInt(event.currentTarget.value, 10);
-                    if (Number.isFinite(num)) {
-                      updateDeterministicOption('minTabsPerGroup', Math.min(5, Math.max(1, num)));
-                    }
-                  }}
-                />
+                <span class="toggle-row-text">Minimum tabs per group</span>
+                <div class="stepper-control" role="group" aria-label="Minimum tabs per group">
+                  <button
+                    type="button"
+                    class="stepper-btn"
+                    aria-label="Decrease minimum tabs per group"
+                    disabled={settings.deterministicOptions.minTabsPerGroup <= 1}
+                    onClick={() => {
+                      updateDeterministicOption(
+                        'minTabsPerGroup',
+                        Math.max(1, settings.deterministicOptions.minTabsPerGroup - 1),
+                      );
+                    }}
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span class="stepper-val">{settings.deterministicOptions.minTabsPerGroup}</span>
+                  <button
+                    type="button"
+                    class="stepper-btn"
+                    aria-label="Increase minimum tabs per group"
+                    disabled={settings.deterministicOptions.minTabsPerGroup >= 5}
+                    onClick={() => {
+                      updateDeterministicOption(
+                        'minTabsPerGroup',
+                        Math.min(5, settings.deterministicOptions.minTabsPerGroup + 1),
+                      );
+                    }}
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
               </div>
             </section>
 
             <section class="settings-section">
-              <div class="settings-section-title">
+              <h2 class="settings-section-title">
                 Custom Rules ({settings.customRules.length})
-              </div>
+              </h2>
               {settings.customRules.map((rule) => (
-                <div key={rule.id} class="rule-item">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <div
+                  key={rule.id}
+                  class={`rule-item${rule.enabled ? '' : ' is-disabled'}`}
+                  style={
+                    { '--rule-accent': `var(--chrome-${rule.color}-dot)` } as Record<string, string>
+                  }
+                >
+                  <div class="rule-item-main">
+                    <div class="rule-meta">
+                      <div class="rule-title-row">
+                        <span class="rule-title">
+                          {rule.emoji} {rule.name}
+                        </span>
+                        <span class="rule-target-badge">{rule.matchTarget}</span>
+                        {rule.isRegex && <span class="rule-target-badge">regex</span>}
+                      </div>
+                      <span class="rule-pattern" title={rule.pattern}>
+                        {rule.pattern}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="rule-actions">
                     <input
                       type="checkbox"
+                      role="switch"
+                      {...({ switch: '' } as Record<string, string>)}
+                      class="prism-switch"
                       checked={rule.enabled}
-                      aria-label={`Toggle rule ${rule.name}`}
+                      aria-label={`Rule ${rule.name}`}
                       onChange={(e) => {
                         const enabled = e.currentTarget.checked;
                         void store.updateSettings({
@@ -534,42 +679,35 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                         });
                       }}
                     />
-                    <span
-                      class="color-dot-btn"
-                      style={{ backgroundColor: `var(--chrome-${rule.color}-dot)` }}
-                    />
-                    <div class="rule-meta">
-                      <span class="rule-title">
-                        {rule.emoji} {rule.name}
-                      </span>
-                      <span class="rule-pattern">
-                        [{rule.matchTarget}] {rule.pattern}
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      class="group-action-btn"
+                      aria-label={`Delete rule ${rule.name}`}
+                      title="Delete rule"
+                      onClick={() => {
+                        void store.updateSettings({
+                          customRules: settings.customRules.filter((r) => r.id !== rule.id),
+                        });
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    class="group-action-btn"
-                    aria-label={`Delete rule ${rule.name}`}
-                    onClick={() => {
-                      void store.updateSettings({
-                        customRules: settings.customRules.filter((r) => r.id !== rule.id),
-                      });
-                    }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
                 </div>
               ))}
 
-              <form class="field-group" onSubmit={handleAddRule}>
+              <form class="rule-composer" onSubmit={handleAddRule}>
+                <div class="rule-composer-label">Add Custom Rule</div>
                 <div class="rule-form-grid">
                   <input
                     type="text"
                     class="text-input"
                     placeholder="Rule name"
+                    aria-label="New rule name"
                     value={ruleName}
-                    onInput={(e) => { setRuleName(e.currentTarget.value); }}
+                    onInput={(e) => {
+                      setRuleName(e.currentTarget.value);
+                    }}
                   />
                   <div class="input-row">
                     <input
@@ -578,17 +716,21 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                       style={{ width: '48px', textAlign: 'center' }}
                       aria-label="Rule emoji"
                       value={ruleEmoji}
-                      onInput={(e) => { setRuleEmoji(e.currentTarget.value); }}
+                      onInput={(e) => {
+                        setRuleEmoji(e.currentTarget.value);
+                      }}
                     />
                     <select
                       class="select-input"
                       aria-label="Rule color"
                       value={ruleColor}
-                      onChange={(e) => { setRuleColor(e.currentTarget.value as ChromeTabGroupColor); }}
+                      onChange={(e) => {
+                        setRuleColor(e.currentTarget.value as ChromeTabGroupColor);
+                      }}
                     >
                       {CHROME_TAB_GROUP_COLORS.map((c) => (
                         <option key={c} value={c}>
-                          {c}
+                          {CHROME_COLOR_LABELS[c]}
                         </option>
                       ))}
                     </select>
@@ -600,7 +742,9 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                     class="select-input"
                     aria-label="Match target"
                     value={ruleTarget}
-                    onChange={(e) => { setRuleTarget(e.currentTarget.value as RuleMatchTarget); }}
+                    onChange={(e) => {
+                      setRuleTarget(e.currentTarget.value as RuleMatchTarget);
+                    }}
                   >
                     {RULE_MATCH_TARGETS.map((t) => (
                       <option key={t} value={t}>
@@ -609,25 +753,28 @@ export function SettingsScreen({ store }: SettingsScreenProps) {
                     ))}
                   </select>
 
-                  <label class="toggle-row" style={{ justifyContent: 'flex-start' }}>
-                    <input
-                      type="checkbox"
+                  <div class="rule-toggle-cell">
+                    <ToggleSwitch
+                      id="new-rule-regex"
+                      label="Regex"
                       checked={ruleIsRegex}
-                      onChange={(e) => { setRuleIsRegex(e.currentTarget.checked); }}
+                      onChange={setRuleIsRegex}
                     />
-                    <span>Regex</span>
-                  </label>
+                  </div>
                 </div>
 
                 <div class="input-row">
                   <input
                     type="text"
-                    class="text-input"
+                    class="text-input text-input--mono"
                     placeholder="Pattern (e.g. github.com, linear.app)"
+                    aria-label="Rule pattern"
                     value={rulePattern}
-                    onInput={(e) => { setRulePattern(e.currentTarget.value); }}
+                    onInput={(e) => {
+                      setRulePattern(e.currentTarget.value);
+                    }}
                   />
-                  <button type="submit" class="btn-secondary" style={{ height: '28px' }}>
+                  <button type="submit" class="btn-secondary" style={{ minBlockSize: '32px' }}>
                     <Plus size={13} />
                     <span>Add</span>
                   </button>

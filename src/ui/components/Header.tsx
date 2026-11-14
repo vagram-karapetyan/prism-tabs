@@ -1,6 +1,7 @@
 import { ArrowLeft, Settings } from 'lucide-preact';
 import { APP_VERSION } from '../../domain/version';
 import { type PopupStore } from '../state/popup.store';
+import { PrismBrandMark } from './PrismBrandMark';
 
 interface HeaderProps {
   store: PopupStore;
@@ -8,42 +9,44 @@ interface HeaderProps {
 
 export function Header({ store }: HeaderProps) {
   const isSettingsOpen = store.settingsOpen.value;
+  const isSorting = store.isSorting.value;
 
   return (
     <header class="prism-header">
       <div class="prism-brand">
-        <img
-          src="/icons/prism.svg"
-          alt="Prism Tabs"
-          width={20}
-          height={20}
-          style={{ display: 'block', flexShrink: 0 }}
-        />
-        <span class="prism-brand-title">Prism Tabs</span>
-        <span class="prism-version-pill">v{APP_VERSION}</span>
+        <PrismBrandMark size={24} isRefracting={isSorting} />
+        <div class="prism-brand-copy">
+          <h1 class="prism-brand-title">
+            Prism <span class="prism-brand-subtitle">{isSettingsOpen ? 'Settings' : 'Tabs'}</span>
+          </h1>
+          <span class="prism-version-pill">v{APP_VERSION}</span>
+        </div>
       </div>
 
-      <button
-        type="button"
-        class="prism-icon-btn"
-        aria-label={isSettingsOpen ? 'Back to tabs' : 'Open settings'}
-        onClick={() => {
-          if (isSettingsOpen) {
-            store.closeSettings();
-          } else {
-            store.openSettings();
-          }
-        }}
-      >
-        {isSettingsOpen ? (
-          <>
-            <ArrowLeft size={14} />
-            <span>Back</span>
-          </>
-        ) : (
-          <Settings size={15} />
-        )}
-      </button>
+      <div class="prism-header-actions">
+        <button
+          type="button"
+          class={`prism-icon-btn${isSettingsOpen ? '' : ' prism-icon-btn--square'}`}
+          aria-label={isSettingsOpen ? 'Back to tabs' : 'Open settings'}
+          title={isSettingsOpen ? 'Back to tabs (Esc)' : 'Open settings'}
+          onClick={() => {
+            if (isSettingsOpen) {
+              store.closeSettings();
+            } else {
+              store.openSettings();
+            }
+          }}
+        >
+          {isSettingsOpen ? (
+            <>
+              <ArrowLeft size={14} />
+              <span>Back</span>
+            </>
+          ) : (
+            <Settings size={15} />
+          )}
+        </button>
+      </div>
     </header>
   );
 }

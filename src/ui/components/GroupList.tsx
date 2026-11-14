@@ -1,4 +1,5 @@
-import { useState } from 'preact/hooks';
+import { ChevronsDownUp, ChevronsUpDown, Layers } from 'lucide-preact';
+import { useEffect, useState } from 'preact/hooks';
 import { type PopupStore } from '../state/popup.store';
 import { resolveDraggedTabId } from '../utils/drag-drop';
 import { GroupCard } from './GroupCard';
@@ -10,27 +11,96 @@ interface GroupListProps {
 
 export function GroupList({ store }: GroupListProps) {
   const [isUngroupedDropOver, setIsUngroupedDropOver] = useState(false);
+  const draggingId = store.draggingTabId.value;
+
+  useEffect(() => {
+    if (draggingId === null && isUngroupedDropOver) {
+      setIsUngroupedDropOver(false);
+    }
+  }, [draggingId, isUngroupedDropOver]);
 
   if (store.isLoading.value) {
     return (
-      <main class="prism-scroll-area">
-        <div class="empty-state">Loading window tabs...</div>
+      <main class="prism-scroll-area" aria-busy="true" aria-label="Loading window tabs">
+        <div class="skeleton-stack">
+          <div class="skeleton-card" />
+          <div class="skeleton-card" />
+          <div class="skeleton-card" />
+        </div>
       </main>
     );
   }
 
   const query = store.searchQuery.value;
+  const trimmedQuery = query.trim();
   const { groups, ungroupedTabs } = store.searchResult.value;
-  const draggingId = store.draggingTabId.value;
   const showUngroupedSection = ungroupedTabs.length > 0 || draggingId !== null;
+  const expandedIds = store.expandedGroupIds.value;
+  const allExpanded =
+    groups.length > 0 && groups.every((entry) => expandedIds.includes(entry.group.id));
+
+  function handleToggleExpandAll(): void {
+    if (allExpanded) {
+      for (const entry of groups) {
+        if (expandedIds.includes(entry.group.id)) {
+          store.toggleGroupExpanded(entry.group.id);
+        }
+      }
+      return;
+    }
+    for (const entry of groups) {
+      if (!expandedIds.includes(entry.group.id)) {
+        store.toggleGroupExpanded(entry.group.id);
+      }
+    }
+  }
 
   return (
     <main class="prism-scroll-area">
+      {groups.length > 1 && !trimmedQuery && (
+        <div class="workspace-bar">
+          <span class="workspace-heading">Tab Groups ({groups.length})</span>
+          <button
+            type="button"
+            class="workspace-toggle-btn"
+            onClick={handleToggleExpandAll}
+          >
+            {allExpanded ? (
+              <>
+                <ChevronsDownUp size={12} />
+                <span>Collapse all</span>
+              </>
+            ) : (
+              <>
+                <ChevronsUpDown size={12} />
+                <span>Expand all</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {groups.length === 0 && !showUngroupedSection && (
         <div class="empty-state">
-          {query.trim()
-            ? `No tabs or groups match "${query.trim()}".`
-            : 'No tabs in this window.'}
+          <span class="empty-state-icon" aria-hidden="true">
+            <Layers size={18} />
+          </span>
+          <span>
+            {trimmedQuery
+              ? `No tabs or groups match "${trimmedQuery}".`
+              : 'No tabs in this window.'}
+          </span>
+          {trimmedQuery && (
+            <button
+              type="button"
+              class="workspace-toggle-btn"
+              onClick={() => {
+                store.clearSearch();
+              }}
+            >
+              Clear search
+            </button>
+          )}
         </div>
       )}
 
@@ -55,8 +125,17 @@ export function GroupList({ store }: GroupListProps) {
             }
             if (!isUngroupedDropOver) setIsUngroupedDropOver(true);
           }}
-          onDragLeave={() => {
-            if (isUngroupedDropOver) setIsUngroupedDropOver(false);
+          onDragLeave={(event) => {
+            const related = event.relatedTarget;
+            if (
+              !(
+                typeof Node !== 'undefined' &&
+                related instanceof Node &&
+                event.currentTarget.contains(related)
+              )
+            ) {
+              setIsUngroupedDropOver(false);
+            }
           }}
           onDrop={(event) => {
             event.preventDefault();
@@ -88,7 +167,9 @@ export function GroupList({ store }: GroupListProps) {
                     store.setDraggingTabId(tabId);
                     event.dataTransfer?.setData('text/plain', String(tabId));
                   }}
-                  onDragEnd={() => { store.setDraggingTabId(null); }}
+                  onDragEnd={() => {
+                    store.setDraggingTabId(null);
+                  }}
                 />
               ))}
             </div>

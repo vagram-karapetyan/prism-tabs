@@ -1,56 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
   <defs>
-    <!-- Outer badge background with high-contrast border for both Light and Dark Chrome themes -->
-    <linearGradient id="bgGrad" x1="12" y1="8" x2="116" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#131726"/>
-      <stop offset="55%" stop-color="#0B0E17"/>
-      <stop offset="100%" stop-color="#191D32"/>
+    <clipPath id="pt-badge-clip">
+      <rect x="6" y="6" width="116" height="116" rx="26" />
+    </clipPath>
+    <linearGradient id="pt-bg" x1="12" y1="8" x2="116" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#161D33" />
+      <stop offset="55%" stop-color="#0B0F1A" />
+      <stop offset="100%" stop-color="#070911" />
     </linearGradient>
-    <linearGradient id="rimGrad" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#818CF8" stop-opacity="0.85"/>
-      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#F472B6" stop-opacity="0.85"/>
+    <linearGradient id="pt-rim" x1="8" y1="8" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A5B4FC" stop-opacity="0.95" />
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.72" />
+      <stop offset="100%" stop-color="#F472B6" stop-opacity="0.9" />
     </linearGradient>
-    <!-- Glass Prism Body -->
-    <linearGradient id="prismGlass" x1="34" y1="26" x2="94" y2="100" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
-      <stop offset="35%" stop-color="#CBD5E1" stop-opacity="0.32"/>
-      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.48"/>
+    <linearGradient id="pt-beam-in" x1="8" y1="74" x2="45" y2="57" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.15" />
+      <stop offset="35%" stop-color="#F8FAFC" stop-opacity="0.92" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="1" />
     </linearGradient>
-    <!-- Inner core refraction glow -->
-    <linearGradient id="innerCore" x1="48" y1="56" x2="82" y2="72" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
-      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="#EC4899" stop-opacity="0.8"/>
+    <linearGradient id="pt-ray-warm" x1="75" y1="49" x2="119" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FB7185" />
+      <stop offset="100%" stop-color="#FBBF24" />
+    </linearGradient>
+    <linearGradient id="pt-ray-mid" x1="80" y1="64" x2="120" y2="63" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#22D3EE" />
+    </linearGradient>
+    <linearGradient id="pt-ray-cool" x1="85" y1="79" x2="118" y2="97" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#C084FC" />
+    </linearGradient>
+    <linearGradient id="pt-glass-left" x1="36" y1="28" x2="62" y2="98" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.94" />
+      <stop offset="55%" stop-color="#E0E7FF" stop-opacity="0.34" />
+      <stop offset="100%" stop-color="#818CF8" stop-opacity="0.22" />
+    </linearGradient>
+    <linearGradient id="pt-glass-right" x1="62" y1="22" x2="98" y2="98" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#CBD5E1" stop-opacity="0.46" />
+      <stop offset="60%" stop-color="#6366F1" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.32" />
+    </linearGradient>
+    <linearGradient id="pt-core" x1="44" y1="57" x2="86" y2="75" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.82" />
+      <stop offset="52%" stop-color="#38BDF8" stop-opacity="0.52" />
+      <stop offset="100%" stop-color="#F472B6" stop-opacity="0.62" />
     </linearGradient>
   </defs>
 
-  <!-- Rounded Squircle Badge -->
-  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bgGrad)" stroke="url(#rimGrad)" stroke-width="4"/>
+  <!-- Outer squircle background -->
+  <rect x="6" y="6" width="116" height="116" rx="26" fill="url(#pt-bg)" />
 
-  <!-- Incoming Coherent White Light Beam -->
-  <path d="M10 70L45 58" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round"/>
-  <path d="M10 70L45 58" stroke="#E0E7FF" stroke-width="3" stroke-linecap="round"/>
+  <!-- Beams & prism clipped cleanly inside the squircle rim -->
+  <g clip-path="url(#pt-badge-clip)">
+    <!-- Incoming coherent white beam -->
+    <path d="M6 74L45 57" stroke="url(#pt-beam-in)" stroke-width="6" stroke-linecap="round" />
 
-  <!-- Refracted Spectral Beams (Right Side) -->
-  <path d="M77 46L116 28" stroke="#EF4444" stroke-width="5.5" stroke-linecap="round"/>
-  <path d="M80 54L118 43" stroke="#F97316" stroke-width="5.5" stroke-linecap="round"/>
-  <path d="M83 62L119 58" stroke="#EAB308" stroke-width="5.5" stroke-linecap="round"/>
-  <path d="M85 70L119 73" stroke="#22C55E" stroke-width="5.5" stroke-linecap="round"/>
-  <path d="M87 78L118 88" stroke="#06B6D4" stroke-width="5.5" stroke-linecap="round"/>
-  <path d="M89 86L114 102" stroke="#A855F7" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- Three clean, high-contrast spectral beams -->
+    <path d="M75 49L122 29" stroke="url(#pt-ray-warm)" stroke-width="7" stroke-linecap="round" />
+    <path d="M80 64L122 63" stroke="url(#pt-ray-mid)" stroke-width="7" stroke-linecap="round" />
+    <path d="M85 79L120 98" stroke="url(#pt-ray-cool)" stroke-width="7" stroke-linecap="round" />
 
-  <!-- Internal dispersion fan inside the prism -->
-  <polygon points="45,58 78,46 88,85" fill="url(#innerCore)" opacity="0.7"/>
+    <!-- Internal dispersion wedge -->
+    <polygon points="44,58 76,48 86,82" fill="url(#pt-core)" />
 
-  <!-- Crystalline Triangular Prism -->
-  <polygon
-    points="62,20 24,98 100,98"
-    fill="url(#prismGlass)"
-    stroke="#F8FAFC"
-    stroke-width="4"
-    stroke-linejoin="round"
-  />
-  <!-- Specular highlight facet -->
-  <path d="M62 24L42 94" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.55" stroke-linecap="round"/>
+    <!-- Faceted architectural glass prism -->
+    <polygon points="62,22 22,98 62,98" fill="url(#pt-glass-left)" />
+    <polygon points="62,22 62,98 102,98" fill="url(#pt-glass-right)" />
+    <line x1="62" y1="24" x2="62" y2="96" stroke="#FFFFFF" stroke-width="1.8" stroke-opacity="0.45" />
+    <polygon
+      points="62,22 22,98 102,98"
+      fill="none"
+      stroke="#F8FAFC"
+      stroke-width="4"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <!-- Crisp outer optical rim drawn cleanly over clipped beams -->
+  <rect x="6" y="6" width="116" height="116" rx="26" fill="none" stroke="url(#pt-rim)" stroke-width="3.5" />
 </svg>

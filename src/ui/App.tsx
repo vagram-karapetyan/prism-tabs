@@ -1,4 +1,4 @@
-import { X } from 'lucide-preact';
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-preact';
 import { useEffect, useMemo } from 'preact/hooks';
 import { type PrismServiceDependencies } from '../adapters/composition-root';
 import { Footer } from './components/Footer';
@@ -7,12 +7,19 @@ import { Header } from './components/Header';
 import { ModeAndStatus } from './components/ModeAndStatus';
 import { SearchBar } from './components/SearchBar';
 import { SettingsScreen } from './components/SettingsScreen';
-import { createPopupStore, type PopupStore } from './state/popup.store';
+import { createPopupStore, type PopupStore, type ToastTone } from './state/popup.store';
 import { classifyPopupShortcut } from './utils/keyboard-guard';
 
 interface AppProps {
   store?: PopupStore;
   dependencies?: PrismServiceDependencies;
+}
+
+function ToastIcon({ tone }: { tone: ToastTone }) {
+  if (tone === 'success') return <CheckCircle2 size={14} style={{ flexShrink: 0 }} />;
+  if (tone === 'warning') return <AlertTriangle size={14} style={{ flexShrink: 0 }} />;
+  if (tone === 'error') return <XCircle size={14} style={{ flexShrink: 0 }} />;
+  return <Info size={14} style={{ flexShrink: 0 }} />;
 }
 
 export function App({ store: providedStore, dependencies }: AppProps) {
@@ -34,14 +41,14 @@ export function App({ store: providedStore, dependencies }: AppProps) {
       if (!action) return;
 
       if (action === 'escape') {
-        if (store.searchQuery.value.length > 0) {
-          event.preventDefault();
-          store.clearSearch();
-          return;
-        }
         if (store.settingsOpen.value) {
           event.preventDefault();
           store.closeSettings();
+          return;
+        }
+        if (store.searchQuery.value.length > 0) {
+          event.preventDefault();
+          store.clearSearch();
         }
         return;
       }
@@ -85,13 +92,22 @@ export function App({ store: providedStore, dependencies }: AppProps) {
       )}
 
       {toast && (
-        <div class={`toast-floating banner-${toast.tone}`} role="status" aria-live="polite">
-          <span>{toast.text}</span>
+        <div
+          class={`toast-floating banner-${toast.tone}${isSettingsOpen ? ' toast-floating--bottom' : ''}`}
+          role="status"
+          aria-live="polite"
+        >
+          <span class="banner-lead" style={{ alignItems: 'center' }}>
+            <ToastIcon tone={toast.tone} />
+            <span>{toast.text}</span>
+          </span>
           <button
             type="button"
             class="banner-close-btn"
             aria-label="Dismiss notification"
-            onClick={() => { store.dismissToast(); }}
+            onClick={() => {
+              store.dismissToast();
+            }}
           >
             <X size={12} />
           </button>

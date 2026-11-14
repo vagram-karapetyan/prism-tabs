@@ -1,63 +1,86 @@
 @layer tokens {
   :root {
-    --popup-width: 392px;
-    --popup-height: 440px;
+    --popup-width: 432px;
+    --popup-height: 564px;
 
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
     --space-4: 16px;
 
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+    --radius-xs: 5px;
+    --radius-sm: 7px;
+    --radius-md: 10px;
     --radius-pill: 999px;
 
-    --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono: 'Cascadia Code', ui-monospace, SFMono-Regular, Consolas, monospace;
+    --font-sans: 'Onest Variable', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono Variable', 'Cascadia Code', ui-monospace, SFMono-Regular, Consolas, monospace;
 
-    --text-xs: 11px;
-    --text-sm: 12px;
-    --text-md: 13px;
-    --text-lg: 14px;
+    --text-3xs: 0.625rem;
+    --text-2xs: 0.65625rem;
+    --text-xs: 0.71875rem;
+    --text-sm: 0.78125rem;
+    --text-lg: 0.9375rem;
 
-    --prism-gradient: linear-gradient(90deg, #6366f1, #ec4899, #f59e0b, #10b981, #06b6d4, #6366f1);
+    /* Optical spectrum dispersion rail (Coral -> Amber -> Emerald -> Cyan -> Indigo -> Violet) */
+    --prism-spectrum: linear-gradient(
+      90deg,
+      #fb7185 0%,
+      #fbbf24 20%,
+      #34d399 42%,
+      #22d3ee 62%,
+      #60a5fa 80%,
+      #c084fc 100%
+    );
 
-    /* Default dark-mode Chrome Tab Group pill tokens (overridden in Pure Light) */
-    --chrome-grey-bg: rgba(154, 160, 166, 0.18);
+    --shadow-sm: 0 2px 6px rgba(2, 6, 23, 0.24);
+    --shadow-md: 0 10px 28px rgba(2, 6, 23, 0.42);
+    --shadow-lg: 0 14px 34px rgba(2, 6, 23, 0.58), 0 3px 10px rgba(2, 6, 23, 0.36);
+
+    /* Native Chrome Tab Group Colors — Dark Surface Calibration */
+    --chrome-grey-bg: rgba(154, 160, 166, 0.16);
     --chrome-grey-fg: #e2e8f0;
     --chrome-grey-dot: #9aa0a6;
+    --chrome-grey-border: rgba(154, 160, 166, 0.34);
 
-    --chrome-blue-bg: rgba(96, 165, 250, 0.18);
-    --chrome-blue-fg: #93c5fd;
-    --chrome-blue-dot: #60a5fa;
+    --chrome-blue-bg: rgba(138, 180, 248, 0.16);
+    --chrome-blue-fg: #aecbfa;
+    --chrome-blue-dot: #669df6;
+    --chrome-blue-border: rgba(138, 180, 248, 0.36);
 
-    --chrome-red-bg: rgba(248, 113, 113, 0.18);
-    --chrome-red-fg: #fca5a5;
-    --chrome-red-dot: #f87171;
+    --chrome-red-bg: rgba(242, 139, 130, 0.16);
+    --chrome-red-fg: #f6aea9;
+    --chrome-red-dot: #ee675c;
+    --chrome-red-border: rgba(242, 139, 130, 0.36);
 
-    --chrome-yellow-bg: rgba(250, 204, 21, 0.18);
-    --chrome-yellow-fg: #fde047;
-    --chrome-yellow-dot: #facc15;
+    --chrome-yellow-bg: rgba(253, 214, 99, 0.16);
+    --chrome-yellow-fg: #fde293;
+    --chrome-yellow-dot: #fcc934;
+    --chrome-yellow-border: rgba(253, 214, 99, 0.36);
 
-    --chrome-green-bg: rgba(52, 211, 153, 0.18);
-    --chrome-green-fg: #6ee7b7;
-    --chrome-green-dot: #34d399;
+    --chrome-green-bg: rgba(129, 201, 149, 0.16);
+    --chrome-green-fg: #a8dab5;
+    --chrome-green-dot: #5bb974;
+    --chrome-green-border: rgba(129, 201, 149, 0.36);
 
-    --chrome-pink-bg: rgba(244, 114, 182, 0.18);
-    --chrome-pink-fg: #f9a8d4;
-    --chrome-pink-dot: #f472b6;
+    --chrome-pink-bg: rgba(255, 139, 203, 0.16);
+    --chrome-pink-fg: #fba9d8;
+    --chrome-pink-dot: #ff63b8;
+    --chrome-pink-border: rgba(255, 139, 203, 0.36);
 
-    --chrome-purple-bg: rgba(192, 132, 252, 0.18);
-    --chrome-purple-fg: #d8b4fe;
-    --chrome-purple-dot: #c084fc;
+    --chrome-purple-bg: rgba(197, 138, 249, 0.17);
+    --chrome-purple-fg: #d7aefb;
+    --chrome-purple-dot: #af5cf7;
+    --chrome-purple-border: rgba(197, 138, 249, 0.38);
 
-    --chrome-cyan-bg: rgba(34, 211, 238, 0.18);
-    --chrome-cyan-fg: #67e8f9;
-    --chrome-cyan-dot: #22d3ee;
+    --chrome-cyan-bg: rgba(120, 217, 236, 0.16);
+    --chrome-cyan-fg: #a1e4f2;
+    --chrome-cyan-dot: #24c1e0;
+    --chrome-cyan-border: rgba(120, 217, 236, 0.36);
 
-    --chrome-orange-bg: rgba(251, 146, 60, 0.18);
-    --chrome-orange-fg: #fdba74;
-    --chrome-orange-dot: #fb923c;
+    --chrome-orange-bg: rgba(252, 173, 112, 0.16);
+    --chrome-orange-fg: #fdc69c;
+    --chrome-orange-dot: #fa903e;
+    --chrome-orange-border: rgba(252, 173, 112, 0.36);
   }
 }

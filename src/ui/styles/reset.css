@@ -1,4 +1,26 @@
 @layer reset {
+  :where(
+    html,
+    body,
+    div,
+    section,
+    article,
+    header,
+    footer,
+    main,
+    nav,
+    aside,
+    button,
+    input,
+    select,
+    textarea,
+    label,
+    span,
+    form
+  ) {
+    box-sizing: border-box;
+  }
+
   html,
   body {
     margin: 0;

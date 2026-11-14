@@ -1,6 +1,7 @@
-@layer reset, tokens, themes, base, components, utilities;
+@layer reset, fonts, tokens, themes, base, components, utilities;
 
 @import './reset.css';
+@import './fonts.css';
 @import './tokens.css';
 @import './themes.css';
 @import './base.css';
